@@ -1,0 +1,11 @@
+/config/local.php
+/data/*
+!/data/.htaccess
+!/data/**/.gitkeep
+/uploads/*
+!/uploads/.htaccess
+!/uploads/.gitkeep
+/storage/
+*.zip
+.DS_Store
+Thumbs.db

@@ -1,0 +1,14 @@
+Options -Indexes
+
+<IfModule mod_rewrite.c>
+RewriteEngine On
+RewriteRule ^cjenik\.xml$ cjenik.php?format=xml [L,QSA,NC]
+RewriteRule ^cjenik\.csv$ cjenik.php?format=csv [L,QSA,NC]
+RewriteRule ^arhiva-cjenika/?$ cjenik.php?view=archive [L,QSA,NC]
+RewriteRule ^arhiva-cjenika/([^/]+\.(?:xml|csv))$ cjenik.php?file=$1 [L,QSA,NC]
+RewriteRule ^(?:data|config|includes)(?:/|$) - [F,L,NC]
+</IfModule>
+
+<FilesMatch "^(?:bootstrap\.php|README\.md)$">
+    Require all denied
+</FilesMatch>

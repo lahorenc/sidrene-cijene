@@ -1,0 +1,9 @@
+﻿<?php
+declare(strict_types=1);
+
+return [
+    'base_url' => '/sc',
+    'timezone' => 'Europe/Zagreb',
+    'archive_days' => 30,
+    'embed_origins' => ['*'],
+];
