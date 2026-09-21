@@ -15,32 +15,10 @@
     });
   }
 
-  function hostLayout() {
-    return document.documentElement.getAttribute('data-sc-host-layout') || 'default';
-  }
-
-  function parentLayoutCss(width, layout) {
-    var base =
-      '.sc-cjenik-embed{display:block;width:100%;max-width:' + width + ';margin:0 auto 24px;}' +
-      '#sc-cjenik,.sc-cjenik-embed iframe{display:block;width:100%;max-width:100%;margin:0 auto;border:0;}';
-    if (layout !== 'shape5') {
-      return base;
-    }
+  function parentLayoutCss(width) {
     return (
-      'body:has(#sc-cjenik) #s5_right_column_wrap,body:has(#sc-cjenik) #s5_right_wrap,' +
-      'body:has(.sc-cjenik-embed) #s5_right_column_wrap,body:has(.sc-cjenik-embed) #s5_right_wrap' +
-      '{display:none!important;width:0!important;}' +
-      'body:has(#sc-cjenik) #s5_center_column_wrap_inner,' +
-      'body:has(.sc-cjenik-embed) #s5_center_column_wrap_inner{margin-right:0!important;width:100%!important;}' +
-      'body:has(#sc-cjenik) #s5_component_wrap,body:has(#sc-cjenik) #s5_component_wrap_inner,' +
-      'body:has(.sc-cjenik-embed) #s5_component_wrap,body:has(.sc-cjenik-embed) #s5_component_wrap_inner' +
-      '{width:100%!important;}' +
-      'body:has(#sc-cjenik) .item-page,body:has(.sc-cjenik-embed) .item-page' +
-      '{width:100%;max-width:' + width + ';margin-left:auto;margin-right:auto;}' +
-      'body:has(#sc-cjenik) .item-page>h2,body:has(#sc-cjenik) .item-page .page-header,' +
-      'body:has(.sc-cjenik-embed) .item-page>h2,body:has(.sc-cjenik-embed) .item-page .page-header' +
-      '{text-align:center;}' +
-      base
+      '.sc-cjenik-embed{display:block;width:100%;max-width:' + width + ';margin:0 auto 24px;}' +
+      '#sc-cjenik,.sc-cjenik-embed iframe{display:block;width:100%;max-width:100%;margin:0 auto;border:0;}'
     );
   }
 
@@ -70,7 +48,7 @@
         style.id = 'sc-cjenik-parent-style';
         (parentDoc.head || parentDoc.documentElement).appendChild(style);
       }
-      style.textContent = parentLayoutCss(width, hostLayout());
+      style.textContent = parentLayoutCss(width);
     } catch (error) {}
   }
 

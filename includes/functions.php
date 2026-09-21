@@ -469,12 +469,9 @@ function sc_settings(): array
         'accent_color' => '#18233d',
         'custom_css' => '',
         'show_credit' => true,
-        'embed_host_layout' => 'default',
         'cron_token' => '',
         'theme' => [],
     ], $stored);
-    $layout = (string) ($settings['embed_host_layout'] ?? 'default');
-    $settings['embed_host_layout'] = in_array($layout, ['default', 'shape5'], true) ? $layout : 'default';
     $hadTheme = isset($stored['theme']) && is_array($stored['theme']) && $stored['theme'] !== [];
     $theme = array_replace(sc_theme_defaults(), $hadTheme ? $stored['theme'] : []);
     if (!$hadTheme) {
@@ -505,43 +502,11 @@ function sc_embed_width(array $settings): string
     return trim((string) (($settings['theme']['page_width'] ?? '') ?: '1180px'));
 }
 
-function sc_embed_host_layout(array $settings): string
-{
-    $layout = (string) ($settings['embed_host_layout'] ?? 'default');
-    return in_array($layout, ['default', 'shape5'], true) ? $layout : 'default';
-}
-
-function sc_embed_parent_css_base(string $width): string
-{
-    return '.sc-cjenik-embed{display:block;width:100%;max-width:' . $width . ';margin:0 auto 24px;}'
-        . '#sc-cjenik,.sc-cjenik-embed iframe{display:block;width:100%;max-width:100%;margin:0 auto;border:0;}';
-}
-
-function sc_embed_parent_css_shape5(string $width): string
-{
-    return 'body:has(#sc-cjenik) #s5_right_column_wrap,body:has(#sc-cjenik) #s5_right_wrap,'
-        . 'body:has(.sc-cjenik-embed) #s5_right_column_wrap,body:has(.sc-cjenik-embed) #s5_right_wrap'
-        . '{display:none!important;width:0!important;}'
-        . 'body:has(#sc-cjenik) #s5_center_column_wrap_inner,'
-        . 'body:has(.sc-cjenik-embed) #s5_center_column_wrap_inner{margin-right:0!important;width:100%!important;}'
-        . 'body:has(#sc-cjenik) #s5_component_wrap,body:has(#sc-cjenik) #s5_component_wrap_inner,'
-        . 'body:has(.sc-cjenik-embed) #s5_component_wrap,body:has(.sc-cjenik-embed) #s5_component_wrap_inner'
-        . '{width:100%!important;}'
-        . 'body:has(#sc-cjenik) .item-page,body:has(.sc-cjenik-embed) .item-page'
-        . '{width:100%;max-width:' . $width . ';margin-left:auto;margin-right:auto;}'
-        . 'body:has(#sc-cjenik) .item-page>h2,body:has(#sc-cjenik) .item-page .page-header,'
-        . 'body:has(.sc-cjenik-embed) .item-page>h2,body:has(.sc-cjenik-embed) .item-page .page-header'
-        . '{text-align:center;}';
-}
-
 function sc_embed_parent_css(array $settings): string
 {
     $width = sc_embed_width($settings);
-    $css = sc_embed_parent_css_base($width);
-    if (sc_embed_host_layout($settings) === 'shape5') {
-        $css = sc_embed_parent_css_shape5($width) . $css;
-    }
-    return $css;
+    return '.sc-cjenik-embed{display:block;width:100%;max-width:' . $width . ';margin:0 auto 24px;}'
+        . '#sc-cjenik,.sc-cjenik-embed iframe{display:block;width:100%;max-width:100%;margin:0 auto;border:0;}';
 }
 
 function sc_embed_style(array $settings): string

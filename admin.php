@@ -56,8 +56,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $settings['catalog_title'] = trim((string) ($_POST['title'] ?? 'Cjenik'));
             $settings['custom_css'] = sc_clean_css((string) ($_POST['custom_css'] ?? ''));
             $settings['show_credit'] = !empty($_POST['show_credit']);
-            $layout = (string) ($_POST['embed_host_layout'] ?? 'default');
-            $settings['embed_host_layout'] = in_array($layout, ['default', 'shape5'], true) ? $layout : 'default';
             $settings['theme'] = sc_theme_from_post($_POST);
             $settings['accent_color'] = (string) $settings['theme']['accent_color'];
             $ok = sc_save_settings($settings)
@@ -431,19 +429,6 @@ sc_admin_head('Administracija');
                     Prikaži u podnožju javnog cjenika: <em>sidrene cijene by Enc IT d.o.o.</em>
                 </label>
                 <p class="sc-hint">Ako isključite, potpis se ne prikazuje ni na javnoj stranici ni u ugradnji (iframe).</p>
-                <h3>Ugradnja u host stranicu</h3>
-                <div class="sc-field">
-                    <label for="embed_host_layout">Layout host CMS-a</label>
-                    <select id="embed_host_layout" name="embed_host_layout">
-                        <option value="default"<?= sc_embed_host_layout($settings) === 'default' ? ' selected' : '' ?>>Standard (ProcessWire, WordPress, običan HTML…)</option>
-                        <option value="shape5"<?= sc_embed_host_layout($settings) === 'shape5' ? ' selected' : '' ?>>Joomla Shape5 (skrij desni stupac)</option>
-                    </select>
-                    <small class="sc-hint">
-                        Shape5 CSS ide u embed kod samo ako je ovo uključeno (npr. bikefix53).
-                        Na ostalim siteovima ostavite Standard — inače se u kod kopiraju suvišni <code>#s5_*</code> selektori.
-                        Nakon promjene ponovno kopirajte embed iz kartice Ugradnja.
-                    </small>
-                </div>
             </section>
         </div>
 
@@ -569,8 +554,6 @@ A4 papir 500 listova;pap-500;4.50;4.50;10.09.2026;Uredski materijal</pre>
         <p class="sc-hint">
             Kopirajte kod ispod u Joomla Custom HTML modul, WordPress Custom HTML blok ili običnu HTML/PHP stranicu.
             Font, boje, okviri i vlastiti CSS uzimaju se iz Postavki unutar cjenika — nije ih potrebno ponovno pisati ovdje.
-            Trenutačni host layout: <strong><?= sc_embed_host_layout($settings) === 'shape5' ? 'Joomla Shape5' : 'Standard' ?></strong>
-            (mijenja se u Postavkama → Ugradnja u host stranicu).
             Širina iframea prati polje <strong>Širina cjenika</strong> (sada <?= sc_e((string) $settings['theme']['page_width']) ?>); na užem ekranu se i dalje smanjuje na 100%.
         </p>
         <div class="sc-field">

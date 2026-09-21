@@ -86,7 +86,7 @@ $archiveUrl = $localServer
     : sc_base_url('arhiva-cjenika/') . '?' . $queryBase;
 $catalogUrl = sc_base_url('cjenik.php') . '?' . $queryBase;
 ?><!doctype html>
-<html lang="hr" data-sc-host-layout="<?= sc_e(sc_embed_host_layout($settings)) ?>">
+<html lang="hr">
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">

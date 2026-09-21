@@ -16,9 +16,6 @@ Ne koristi bazu podataka i **ne ovisi** o WordPressu, Joomli, ProcessWireu ili d
 - Dnevna arhiva (XML+CSV) uz CLI ili HTTP cron
 - Admin: TinyMCE, file manager, tema/boje, vlastiti CSS
 - Responsivni **iframe embed** s automatskom visinom (`postMessage`)
-- Dva moda host layouta u embedu:
-  - **Standard** — ProcessWire, WordPress, običan HTML…
-  - **Joomla Shape5** — dodatni CSS za skrivanje desnog stupca (`#s5_*`)
 - Podaci u JSON datotekama (zaključavanje + backup prije spremanja)
 - Bez ugrađene početne lozinke — credentiali se kreiraju pri prvom ulasku u admin
 
@@ -86,12 +83,7 @@ Opcionalno filtriranje kategorija u embedu:
 
 U adminu: **Ugradnja** → označi kategorije (opcionalno) → kopiraj „Responsivni embed kod“.
 
-U **Postavkama** → *Ugradnja u host stranicu* odaberi:
-
-- **Standard** — čisti CSS (wrapper + iframe); za ProcessWire, WordPress, custom HTML
-- **Joomla Shape5** — dodatno skriva desni Shape5 stupac na host stranici
-
-Nakon promjene layouta ili širine cjenika, **ponovno kopiraj** embed kod.
+Nakon promjene širine cjenika, **ponovno kopiraj** embed kod.
 
 Iframe šalje `postMessage` tipa `sc-cjenik-height` pa roditeljska stranica nema unutarnji scrollbar. Font, boje i vlastiti CSS dolaze iz Postavki unutar iframea — ne pišu se u embed HTML.
 
