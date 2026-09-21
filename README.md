@@ -2,6 +2,8 @@
 
 Samostalni PHP modul za **objavu cjenika i sidrenih cijena** (Zakon o nepoštenoj trgovačkoj praksi / transparentnost cijena). Stavke mogu biti proizvodi, usluge, materijali ili drugi sadržaj.
 
+Moguće je **kreirati više različitih cjenika** (kataloga) i **pozivati ih po kategorijama** — svaki cjenik ima svoj slug (`?catalog=…`), a u embedu se može filtrirati jedna ili više kategorija (`&categories=…`).
+
 Ne koristi bazu podataka i **ne ovisi** o WordPressu, Joomli, ProcessWireu ili drugom CMS-u. Ugrađuje se kao mapa `/sc` u web root i radi kao zasebna aplikacija; na postojeću stranicu se ubacuje iframe embedom.
 
 **Izdavač:** [Enc IT d.o.o.](https://www.enc-it.hr/) · verzija **1.0.0**
@@ -10,7 +12,8 @@ Ne koristi bazu podataka i **ne ovisi** o WordPressu, Joomli, ProcessWireu ili d
 
 ## Značajke
 
-- Više cjenika (kataloga) po slugovima (`?catalog=main`, `?catalog=ordinacija`…)
+- Više različitih cjenika (kataloga) po slugovima (`?catalog=main`, `?catalog=ordinacija`…)
+- Pozivanje / filtriranje po kategorijama u embedu (`&categories=slug-1,slug-2`)
 - Kategorije i stavke s cijenom, sidrenom cijenom i datumom sidrenja
 - Javni prikaz + XML / CSV / JSON izvoz
 - Dnevna arhiva (XML+CSV) uz CLI ili HTTP cron
