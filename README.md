@@ -8,6 +8,8 @@ Ne koristi bazu podataka i **ne ovisi** o WordPressu, Joomli, ProcessWireu ili d
 
 **Izdavač:** [Enc IT d.o.o.](https://www.enc-it.hr/) · verzija **1.0.0**
 
+> **Napomena:** ovo nije pravni savjet i ne jamči usklađenost s propisima. Trgovac u cijelosti odgovara za točnost cijena. Vidi [Odricanje od odgovornosti](#odricanje-od-odgovornosti).
+
 ---
 
 ## Značajke
@@ -178,6 +180,29 @@ php -S 127.0.0.1:8080 -t .
 # zatim http://127.0.0.1:8080/admin.php
 # (po potrebi u local.php: 'base_url' => '')
 ```
+
+---
+
+## Odricanje od odgovornosti
+
+Ovaj plugin nije pravni savjet i ne jamči usklađenost s važećim propisima.
+
+Plugin je pomoćni tehnički alat namijenjen olakšavanju provedbe određenih obveza povezanih s prikazom i evidencijom cijena prema odlukama objavljenima u Narodnim novinama, br. 101/2026.
+
+Korisnik plugina, odnosno trgovac ili pružatelj usluge, u cijelosti odgovara za točnost unesenih i prikazanih podataka, ispravnost sidrenih i drugih cijena te za usklađenost svojeg poslovanja s važećim propisima.
+
+Posebno:
+
+1. Autor ne jamči da će datoteke, prikazi ili drugi izlazni podaci koje plugin generira u svakom pojedinom slučaju ispunjavati sve zahtjeve nadležnih tijela. Propisi ne uređuju nužno svaku moguću poslovnu situaciju, a službena tumačenja i tehničke upute mogu se naknadno mijenjati.
+2. Ako su podaci o cijenama netočni, nepotpuni ili ne odgovaraju cijenama koje su stvarno vrijedile na relevantni datum, isti će se netočni podaci prikazivati i u cjeniku te drugim izlazima plugina.
+3. Funkcija zaključavanja ili spremanja referentnih podataka može upisivati podatke u datoteke, odnosno u bazu podataka. Prije korištenja takvih funkcija preporučuje se izrada potpune sigurnosne kopije web-stranice i podataka.
+4. Plugin uređuje isključivo tehničke funkcionalnosti unutar mrežne stranice. Ne obuhvaća obveze isticanja cijena na fizičkim prodajnim mjestima, u letcima, katalozima, plakatima, oglasima ili drugim kanalima prodaje i oglašavanja.
+5. Plugin ne zamjenjuje eventualne druge obveze vezane uz prikaz cijena, uključujući obvezu isticanja najniže cijene u prethodnom razdoblju kod posebnih oblika prodaje, kada je takva obveza primjenjiva prema Zakonu o zaštiti potrošača.
+6. Autor plugina nije povezan s Vladom Republike Hrvatske, Ministarstvom gospodarstva niti drugim nadležnim tijelima. Plugin nema njihovo službeno odobrenje, certifikat ili potvrdu usklađenosti.
+
+Softver se isporučuje „kakav jest“, bez izričitih ili prešutnih jamstava, u skladu s uvjetima licence pod kojom se distribuira.
+
+Za pravno tumačenje propisa, procjenu obveza u konkretnom poslovnom slučaju ili provjeru usklađenosti preporučuje se obratiti kvalificiranom pravnom savjetniku, poreznom savjetniku ili računovođi.
 
 ---
 
