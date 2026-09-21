@@ -1,8 +1,9 @@
 /config/local.php
-/data/*
+/data/**
 !/data/.htaccess
+!/data/**/
 !/data/**/.gitkeep
-/uploads/*
+/uploads/**
 !/uploads/.htaccess
 !/uploads/.gitkeep
 /storage/
