@@ -54,11 +54,53 @@ td small{margin-top:3px;color:var(--sc-muted);font-size:.9em}
 
 @media (max-width:640px){
   .sc-table-wrap{overflow:visible;border:0}
-  table{min-width:0;display:block}
+  .sc-category h2{border-radius:var(--sc-radius);margin-bottom:10px}
+  table{display:block;width:100%;min-width:0}
   thead{display:none}
   tbody{display:grid;gap:10px}
-  tr{display:grid;padding:var(--sc-table-padding);border:var(--sc-border-width) var(--sc-border-style) var(--sc-border-color);border-radius:var(--sc-radius)}
-  td,td:first-child{display:grid;grid-template-columns:minmax(115px,38%) 1fr;width:auto;padding:.4em 0;border:0;gap:8px}
-  td::before{content:attr(data-label);font-size:var(--sc-table-size);font-weight:700;color:var(--sc-table-head-color);text-align:left;text-transform:uppercase}
+  tr{display:block;width:100%;min-width:0;padding:var(--sc-table-padding);border:var(--sc-border-width) var(--sc-border-style) var(--sc-border-color);border-radius:var(--sc-radius)}
+  .sc-table-wrap th,
+  .sc-table-wrap td,
+  .sc-table-wrap th:first-child,
+  .sc-table-wrap td:first-child,
+  .sc-table-wrap th:nth-child(2),
+  .sc-table-wrap td:nth-child(2),
+  .sc-table-wrap th:nth-child(3),
+  .sc-table-wrap td:nth-child(3),
+  .sc-table-wrap th:nth-child(4),
+  .sc-table-wrap td:nth-child(4),
+  .sc-archive-table th,
+  .sc-archive-table td,
+  .sc-archive-table th:first-child,
+  .sc-archive-table td:first-child,
+  .sc-archive-table th:nth-child(2),
+  .sc-archive-table td:nth-child(2),
+  .sc-archive-table th:nth-child(3),
+  .sc-archive-table td:nth-child(3),
+  .sc-archive-table th:not(:first-child),
+  .sc-archive-table td:not(:first-child){
+    display:grid;
+    grid-template-columns:minmax(0,1fr) auto;
+    align-items:baseline;
+    width:auto;
+    max-width:100%;
+    padding:.35em 0;
+    border:0;
+    gap:8px;
+    text-align:right;
+    white-space:normal;
+  }
+  .sc-table-wrap td::before{
+    content:attr(data-label);
+    font-size:var(--sc-table-size);
+    font-weight:700;
+    color:var(--sc-table-head-color);
+    text-align:left;
+    text-transform:uppercase;
+    white-space:normal;
+  }
+  .sc-table-wrap td:first-child{display:block;text-align:left}
+  .sc-table-wrap td:first-child::before{display:block;margin-bottom:2px}
+  .sc-price{white-space:normal}
   .sc-archive li{flex-direction:column;gap:2px}
 }

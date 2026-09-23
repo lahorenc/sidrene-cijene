@@ -6,7 +6,7 @@ Moguće je **kreirati više različitih cjenika** (kataloga) i **pozivati ih po 
 
 Ne koristi bazu podataka i **ne ovisi** o WordPressu, Joomli, ProcessWireu ili drugom CMS-u. Ugrađuje se kao mapa `/sc` u web root i radi kao zasebna aplikacija; na postojeću stranicu se ubacuje iframe embedom.
 
-**Izdavač:** [Enc IT d.o.o.](https://www.enc-it.hr/) · verzija **1.0.0**
+**Izdavač:** [Enc IT d.o.o.](https://www.enc-it.hr/) · verzija **1.0.2**
 
 > **Napomena:** ovo nije pravni savjet i ne jamči usklađenost s propisima. Trgovac u cijelosti odgovara za točnost cijena. Vidi [Odricanje od odgovornosti](#odricanje-od-odgovornosti).
 
