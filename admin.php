@@ -53,6 +53,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $settings = sc_settings();
             $settings['merchant_name'] = trim((string) ($_POST['merchant_name'] ?? ''));
             $settings['oib'] = preg_replace('/\D+/', '', (string) ($_POST['oib'] ?? ''));
+            $settings['outlet_form'] = trim((string) ($_POST['outlet_form'] ?? 'online-webshop')) ?: 'online-webshop';
+            $settings['outlet_address'] = trim((string) ($_POST['outlet_address'] ?? ''));
+            $settings['outlet_mark'] = trim((string) ($_POST['outlet_mark'] ?? 'web-1')) ?: 'web-1';
             $settings['catalog_title'] = trim((string) ($_POST['title'] ?? 'Cjenik'));
             $settings['custom_css'] = sc_clean_css((string) ($_POST['custom_css'] ?? ''));
             $settings['show_credit'] = !empty($_POST['show_credit']);
@@ -322,6 +325,19 @@ sc_admin_head('Administracija');
                     <div class="sc-field"><label>Naziv firme</label><input name="merchant_name" value="<?= sc_e($settings['merchant_name']) ?>" required></div>
                     <div class="sc-field"><label>OIB</label><input name="oib" value="<?= sc_e($settings['oib']) ?>"></div>
                     <div class="sc-field">
+                        <label>Adresa prodajnog objekta</label>
+                        <input name="outlet_address" value="<?= sc_e((string) $settings['outlet_address']) ?>" placeholder="npr. Ulica dr. Lavoslava Ružičke 42, Velika Gorica">
+                        <small class="sc-hint">Ulazi u naziv XML/CSV datoteke. Razmaci postaju crtice, dijakritici se skidaju.</small>
+                    </div>
+                    <div class="sc-field">
+                        <label>Oblik prodajnog objekta</label>
+                        <input name="outlet_form" value="<?= sc_e((string) $settings['outlet_form']) ?>" placeholder="online-webshop">
+                    </div>
+                    <div class="sc-field">
+                        <label>Oznaka objekta</label>
+                        <input name="outlet_mark" value="<?= sc_e((string) $settings['outlet_mark']) ?>" placeholder="web-1">
+                    </div>
+                    <div class="sc-field">
                         <label>Naziv odabranog cjenika</label>
                         <input name="title" value="<?= sc_e($data['title']) ?>" required>
                         <small class="sc-hint">Naziv se prikazuje u dropdownu, javnom prikazu i embedu. Slug <code><?= sc_e($catalogId) ?></code> ostaje nepromijenjen.</small>
@@ -484,6 +500,7 @@ sc_admin_head('Administracija');
             <input readonly value="<?= sc_e($cronUrl) ?>" onclick="this.select()">
             <small class="sc-hint">Koristi se samo ako hosting nema CLI cron. Token je već u ovom URL-u.</small>
         </div>
+        <p class="sc-hint">Naziv pohrane: <code><?= sc_e(sc_archive_filename_stem(false)) ?>.xml</code> / <code>.csv</code> — isti naziv, samo ekstenzija je različita.</p>
         <form method="post"><?= sc_csrf_field() ?><input type="hidden" name="action" value="archive"><input type="hidden" name="catalog" value="<?= sc_e($catalogId) ?>"><input type="hidden" name="return_tab" value="izvozi"><button class="sc-btn sc-btn--secondary">Izradi arhivu sada</button></form>
 
         <hr class="sc-split">
@@ -591,7 +608,7 @@ A4 papir 500 listova;pap-500;4.50;4.50;10.09.2026;Uredski materijal</pre>
             <ol class="sc-help-steps">
                 <li>
                     <strong>Postavke</strong>
-                    <span>Upišite naziv firme, OIB i naziv cjenika. Po želji podesite font, boje, širinu i okvire.</span>
+                    <span>Upišite naziv firme, OIB, adresu prodajnog objekta i naziv cjenika. Po želji podesite font, boje, širinu i okvire.</span>
                 </li>
                 <li>
                     <strong>Cjenik</strong>
@@ -726,7 +743,8 @@ A4 papir 500 listova;pap-500;4.50;4.50;10.09.2026;Uredski materijal</pre>
         <article class="sc-help-block">
             <h3>Dnevna arhiva</h3>
             <p>Najbolje je pokretati arhivu preko CLI crona, bez izlaganja tokena na webu:</p>
-            <pre class="sc-help-code">45 6 * * * /usr/bin/php <?= sc_e(sc_cli_archive_path()) ?> <?= sc_e($catalogId) ?> >/dev/null 2>&amp;1</pre>
+            <pre class="sc-help-code">0 8 * * * /usr/bin/php <?= sc_e(sc_cli_archive_path()) ?> <?= sc_e($catalogId) ?> >/dev/null 2>&amp;1</pre>
+            <p>Naziv datoteke: <code>oblik_adresa_oznaka_0001_DD-MM-YYYYTHH-MM.xml</code>. XML i CSV iste pohrane imaju isti naziv, osim ekstenzije.</p>
             <p>Ako hosting nema CLI, koristite HTTP URL i token iz kartice <strong>Izvozi i arhiva</strong>.</p>
             <p class="sc-help-note">Token: <code><?= sc_e((string) $settings['cron_token']) ?></code></p>
             <pre class="sc-help-code"><?= sc_e($cronUrl) ?></pre>

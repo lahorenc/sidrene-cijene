@@ -465,6 +465,10 @@ function sc_settings(): array
     $settings = array_replace([
         'merchant_name' => '',
         'oib' => '',
+        'outlet_form' => 'online-webshop',
+        'outlet_address' => '',
+        'outlet_mark' => 'web-1',
+        'archive_seq' => 0,
         'catalog_title' => 'Cjenik',
         'accent_color' => '#18233d',
         'custom_css' => '',

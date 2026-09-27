@@ -6,7 +6,7 @@ Moguće je **kreirati više različitih cjenika** (kataloga) i **pozivati ih po 
 
 Ne koristi bazu podataka i **ne ovisi** o WordPressu, Joomli, ProcessWireu ili drugom CMS-u. Ugrađuje se kao mapa `/sc` u web root i radi kao zasebna aplikacija; na postojeću stranicu se ubacuje iframe embedom.
 
-**Izdavač:** [Enc IT d.o.o.](https://www.enc-it.hr/) · verzija **1.0.2**
+**Izdavač:** [Enc IT d.o.o.](https://www.enc-it.hr/) · verzija **1.0.3**
 
 > **Napomena:** ovo nije pravni savjet i ne jamči usklađenost s propisima. Trgovac u cijelosti odgovara za točnost cijena. Vidi [Odricanje od odgovornosti](#odricanje-od-odgovornosti).
 
@@ -98,8 +98,17 @@ Iframe šalje `postMessage` tipa `sc-cjenik-height` pa roditeljska stranica nema
 
 Preporučeno (CLI, bez tokena u URL-u):
 
+Naziv arhiviranih XML i CSV datoteka (ista pohrana, samo ekstenzija različita):
+
+```text
+OBLIK_ADRESA_OZNAKA_BROJPOHRANE_DATUMTVRIJEME.ext
+online-webshop_Ulica-dr-Lavoslava-Ruzicke-42-Velika-Gorica_web-1_0005_01-10-2026T08-00.xml
+```
+
+Adresa, oblik (`online-webshop`) i oznaka (`web-1`) unose se u Postavkama. Broj pohrane ima 4 znamenke. Datum i vrijeme su `DD-MM-YYYYTHH-MM`. Prefiks `cjenik-` i oznake poput PROIZVODI/USLUGE se ne koriste.
+
 ```cron
-45 6 * * * /usr/bin/php /var/www/html/sc/cli/archive.php main >/dev/null 2>&1
+0 8 * * * /usr/bin/php /var/www/html/sc/cli/archive.php main >/dev/null 2>&1
 ```
 
 Ako hosting nema CLI cron, admin prikazuje HTTP URL s tokenom:
@@ -151,7 +160,7 @@ Sve živi u `data/` (nije u gitu — samo `.htaccess` / `.gitkeep`):
 
 | Datoteka / mapa | Sadržaj |
 |-----------------|--------|
-| `settings.json` | firma, tema, cron token, embed layout |
+| `settings.json` | firma, adresa objekta, tema, cron token, embed layout |
 | `admin.json` | korisničko ime + hash lozinke |
 | `catalogs/*.json` | cjenici |
 | `history/*.jsonl` | povijest cijena |

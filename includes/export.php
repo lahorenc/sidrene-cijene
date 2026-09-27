@@ -109,7 +109,7 @@ function sc_export_send(string $catalog, string $format): void
     $content = $format === 'xml' ? sc_export_xml($catalog) : sc_export_csv($catalog);
     sc_send_download_headers(
         $format === 'xml' ? 'application/xml; charset=utf-8' : 'text/csv; charset=utf-8',
-        'cjenik-' . sc_slug($catalog) . '-' . date('Y-m-d') . '.' . $format
+        sc_archive_filename_stem(false) . '.' . $format
     );
     echo $content;
     exit;
@@ -126,19 +126,66 @@ function sc_send_download_headers(string $contentType, string $filename): void
     header('X-Robots-Tag: noindex');
 }
 
+function sc_archive_part(string $value): string
+{
+    $value = strtr($value, [
+        'č' => 'c', 'ć' => 'c', 'đ' => 'd', 'š' => 's', 'ž' => 'z',
+        'Č' => 'C', 'Ć' => 'C', 'Đ' => 'D', 'Š' => 'S', 'Ž' => 'Z',
+    ]);
+    $value = str_replace(['.', ',', '_'], ' ', $value);
+    $value = preg_replace('/\s+/', '-', trim($value)) ?? '';
+    $value = preg_replace('/[^A-Za-z0-9-]/', '', $value) ?? '';
+    return trim(preg_replace('/-+/', '-', $value) ?? '', '-');
+}
+
+function sc_archive_filename_stem(bool $incrementSeq = true): string
+{
+    $settings = sc_settings();
+    $form = trim((string) ($settings['outlet_form'] ?? ''));
+    if ($form === '' || $form === 'internetska-trgovina') {
+        $form = 'online-webshop';
+    }
+    $address = trim((string) ($settings['outlet_address'] ?? ''));
+    if ($address === '') {
+        $address = 'nepoznata-adresa';
+    }
+    $mark = trim((string) ($settings['outlet_mark'] ?? ''));
+    if ($mark === '') {
+        $mark = 'web-1';
+    }
+    $seq = (int) ($settings['archive_seq'] ?? 0);
+    if ($incrementSeq) {
+        $seq++;
+        $settings['archive_seq'] = $seq;
+        sc_save_settings($settings);
+    } elseif ($seq < 1) {
+        $seq = 1;
+    }
+
+    return sc_archive_part($form)
+        . '_' . sc_archive_part($address)
+        . '_' . sc_archive_part($mark)
+        . '_' . sprintf('%04d', $seq)
+        . '_' . date('d-m-Y\TH-i');
+}
+
+function sc_archive_filename_pattern(): string
+{
+    return '/^[A-Za-z0-9-]+_[A-Za-z0-9-]+_[A-Za-z0-9-]+_\d{4}_\d{2}-\d{2}-\d{4}T\d{2}-\d{2}\.(xml|csv)$/';
+}
+
 function sc_archive_create(string $catalog): array
 {
     $catalog = sc_slug($catalog);
     $dir = sc_data_path('archives/' . $catalog);
     sc_ensure_directory($dir);
-    $day = date('Y-m-d');
-    foreach ((array) glob($dir . '/cjenik-' . $catalog . '-' . $day . '-*.{xml,csv}', GLOB_BRACE) as $oldFile) {
-        if (is_file($oldFile)) {
+    $day = date('d-m-Y');
+    foreach ((array) glob($dir . '/*_' . $day . 'T*.{xml,csv}', GLOB_BRACE) as $oldFile) {
+        if (is_file($oldFile) && preg_match(sc_archive_filename_pattern(), basename((string) $oldFile))) {
             @unlink($oldFile);
         }
     }
-    $stamp = $day . '-' . date('His');
-    $base = 'cjenik-' . $catalog . '-' . $stamp;
+    $base = sc_archive_filename_stem(true);
     $xml = $dir . '/' . $base . '.xml';
     $csv = $dir . '/' . $base . '.csv';
     $ok = file_put_contents($xml, sc_export_xml($catalog), LOCK_EX) !== false
@@ -188,15 +235,15 @@ function sc_archive_days(string $catalog): array
 {
     $days = [];
     foreach (sc_archive_list($catalog) as $file) {
-        if (!preg_match('/-(\d{4}-\d{2}-\d{2})-(\d{6})\.(xml|csv)$/', (string) $file['name'], $match)) {
+        if (!preg_match('/_(\d{2})-(\d{2})-(\d{4})T(\d{2})-(\d{2})\.(xml|csv)$/', (string) $file['name'], $match)) {
             continue;
         }
-        $date = $match[1];
-        $format = strtolower($match[3]);
+        $date = $match[3] . '-' . $match[2] . '-' . $match[1];
+        $format = strtolower($match[6]);
         if (!isset($days[$date])) {
             $days[$date] = [
                 'date' => $date,
-                'time' => substr($match[2], 0, 2) . ':' . substr($match[2], 2, 2),
+                'time' => $match[4] . ':' . $match[5],
                 'xml' => null,
                 'csv' => null,
             ];
@@ -217,7 +264,7 @@ function sc_format_file_size(int $bytes): string
 function sc_archive_file(string $catalog, string $name): ?string
 {
     $name = basename($name);
-    if (!preg_match('/^cjenik-[a-z0-9-]+-\d{4}-\d{2}-\d{2}-\d{6}\.(xml|csv)$/', $name)) {
+    if (!preg_match(sc_archive_filename_pattern(), $name)) {
         return null;
     }
     $path = sc_data_path('archives/' . sc_slug($catalog) . '/' . $name);
