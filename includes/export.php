@@ -7,7 +7,7 @@ function sc_export_columns(): array
         'naziv', 'sifra', 'marka', 'neto_kolicina', 'jedinica_mjere',
         'cijena', 'posebna_prodaja', 'naziv_posebne_prodaje',
         'cijena_po_jedinici', 'valuta', 'barkod', 'kategorija',
-        'sidrena_cijena', 'sidrena_cijena_datum', 'dostupnost',
+        'bazna_cijena', 'bazna_cijena_datum', 'najniza_cijena_30', 'dostupnost',
     ];
 }
 
@@ -23,6 +23,7 @@ function sc_export_rows(string $catalog): array
 {
     $data = sc_catalog_load($catalog);
     $settings = sc_settings();
+    $history = sc_catalog_history_by_item($catalog);
     $brand = trim((string) $settings['merchant_name']);
     $rows = [];
     foreach ($data['categories'] as $category) {
@@ -33,6 +34,7 @@ function sc_export_rows(string $catalog): array
             $price = sc_export_amount($item['price_amount'], (string) $item['price_label']);
             $anchor = sc_export_amount($item['anchor_amount'], (string) $item['anchor_label']);
             $sale = $price !== '' && $anchor !== '' && (float) $price < (float) $anchor;
+            $lowest = sc_lowest_regular_amount($item, $history[(string) $item['id']] ?? []);
             $rows[] = [
                 'naziv' => (string) $item['name'],
                 'sifra' => trim((string) $item['code']) ?: (string) $item['id'],
@@ -46,8 +48,9 @@ function sc_export_rows(string $catalog): array
                 'valuta' => (string) $data['currency'],
                 'barkod' => '',
                 'kategorija' => (string) $category['title'],
-                'sidrena_cijena' => $anchor,
-                'sidrena_cijena_datum' => $anchor === '' ? '' : (string) $item['anchor_date'],
+                'bazna_cijena' => $anchor,
+                'bazna_cijena_datum' => $anchor === '' ? '' : (string) $item['anchor_date'],
+                'najniza_cijena_30' => $lowest === null ? '' : number_format($lowest, 2, '.', ''),
                 'dostupnost' => 'dostupno',
             ];
         }
@@ -64,7 +67,7 @@ function sc_export_xml(string $catalog): string
     };
     $lines = ['<?xml version="1.0" encoding="UTF-8"?>'];
     $lines[] = sprintf(
-        '<cjenik trgovac="%s" oib="%s" vrijeme="%s" sidrena_cijena_datum="%s">',
+        '<cjenik trgovac="%s" oib="%s" vrijeme="%s" bazna_cijena_datum="%s">',
         $escape($settings['merchant_name']),
         $escape(preg_replace('/\D+/', '', (string) $settings['oib'])),
         $escape(date('c')),
@@ -231,19 +234,39 @@ function sc_archive_list(string $catalog): array
     return $files;
 }
 
+function sc_archive_parse_name(string $name): ?array
+{
+    if (preg_match('/_(\d{2})-(\d{2})-(\d{4})T(\d{2})-(\d{2})\.(xml|csv)$/', $name, $match)) {
+        return [
+            'date' => $match[3] . '-' . $match[2] . '-' . $match[1],
+            'time' => $match[4] . ':' . $match[5],
+            'format' => strtolower($match[6]),
+        ];
+    }
+    if (preg_match('/^cjenik-[a-z0-9-]+-(\d{4}-\d{2}-\d{2})-(\d{6})\.(xml|csv)$/', $name, $match)) {
+        return [
+            'date' => $match[1],
+            'time' => substr($match[2], 0, 2) . ':' . substr($match[2], 2, 2),
+            'format' => strtolower($match[3]),
+        ];
+    }
+    return null;
+}
+
 function sc_archive_days(string $catalog): array
 {
     $days = [];
     foreach (sc_archive_list($catalog) as $file) {
-        if (!preg_match('/_(\d{2})-(\d{2})-(\d{4})T(\d{2})-(\d{2})\.(xml|csv)$/', (string) $file['name'], $match)) {
+        $parsed = sc_archive_parse_name((string) $file['name']);
+        if ($parsed === null) {
             continue;
         }
-        $date = $match[3] . '-' . $match[2] . '-' . $match[1];
-        $format = strtolower($match[6]);
+        $date = $parsed['date'];
+        $format = $parsed['format'];
         if (!isset($days[$date])) {
             $days[$date] = [
                 'date' => $date,
-                'time' => $match[4] . ':' . $match[5],
+                'time' => $parsed['time'],
                 'xml' => null,
                 'csv' => null,
             ];
@@ -264,7 +287,7 @@ function sc_format_file_size(int $bytes): string
 function sc_archive_file(string $catalog, string $name): ?string
 {
     $name = basename($name);
-    if (!preg_match(sc_archive_filename_pattern(), $name)) {
+    if (sc_archive_parse_name($name) === null) {
         return null;
     }
     $path = sc_data_path('archives/' . sc_slug($catalog) . '/' . $name);

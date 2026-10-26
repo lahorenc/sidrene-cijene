@@ -312,6 +312,127 @@ function sc_catalog_history_append(string $catalog, string $itemId, ?array $befo
     );
 }
 
+function sc_plain_amount(array $item, string $prefix): ?float
+{
+    if (!empty($item[$prefix . '_label']) || !empty($item[$prefix . '_from'])) {
+        return null;
+    }
+    $amount = $item[$prefix . '_amount'] ?? null;
+    if ($amount === null || $amount === '' || !is_numeric($amount)) {
+        return null;
+    }
+    return (float) $amount;
+}
+
+function sc_item_is_promo(array $item): bool
+{
+    $price = sc_plain_amount($item, 'price');
+    $anchor = sc_plain_amount($item, 'anchor');
+    return $price !== null && $anchor !== null && $price < $anchor;
+}
+
+function sc_price_state_same(array $left, array $right): bool
+{
+    return sc_plain_amount($left, 'price') === sc_plain_amount($right, 'price')
+        && sc_plain_amount($left, 'anchor') === sc_plain_amount($right, 'anchor')
+        && !empty($left['price_from']) === !empty($right['price_from'])
+        && !empty($left['anchor_from']) === !empty($right['anchor_from'])
+        && (string) ($left['price_label'] ?? '') === (string) ($right['price_label'] ?? '')
+        && (string) ($left['anchor_label'] ?? '') === (string) ($right['anchor_label'] ?? '');
+}
+
+function sc_catalog_history_by_item(string $catalog): array
+{
+    $path = sc_data_path('history/' . sc_slug($catalog) . '.jsonl');
+    if (!is_file($path)) {
+        return [];
+    }
+    $lines = file($path, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
+    if (!is_array($lines)) {
+        return [];
+    }
+    $grouped = [];
+    foreach ($lines as $line) {
+        $record = json_decode((string) $line, true);
+        if (!is_array($record)) {
+            continue;
+        }
+        $id = trim((string) ($record['item_id'] ?? ''));
+        $time = trim((string) ($record['time'] ?? ''));
+        if ($id === '' || $time === '') {
+            continue;
+        }
+        $grouped[$id][] = $record;
+    }
+    foreach ($grouped as &$records) {
+        usort($records, static function (array $a, array $b): int {
+            return strcmp((string) ($a['time'] ?? ''), (string) ($b['time'] ?? ''));
+        });
+    }
+    unset($records);
+    return $grouped;
+}
+
+function sc_lowest_regular_amount(array $current, array $records, ?int $now = null, int $days = 30): ?float
+{
+    $now = $now ?? time();
+    $windowStart = $now - (max(1, $days) * 86400);
+    $candidates = [];
+    $consider = static function ($item) use (&$candidates): void {
+        if (!is_array($item) || sc_item_is_promo($item)) {
+            return;
+        }
+        $amount = sc_plain_amount($item, 'price');
+        if ($amount !== null) {
+            $candidates[] = $amount;
+        }
+    };
+
+    $sorted = array_values(array_filter($records, 'is_array'));
+    usort($sorted, static function (array $a, array $b): int {
+        return strcmp((string) ($a['time'] ?? ''), (string) ($b['time'] ?? ''));
+    });
+    $count = count($sorted);
+    for ($i = 0; $i < $count; $i++) {
+        $time = strtotime((string) ($sorted[$i]['time'] ?? ''));
+        if ($time === false) {
+            continue;
+        }
+        $isLast = $i + 1 === $count;
+        $nextRaw = $isLast ? $now : strtotime((string) ($sorted[$i + 1]['time'] ?? ''));
+        $next = $nextRaw === false ? $now : $nextRaw;
+        if ($time > $windowStart && $time <= $now) {
+            $consider($sorted[$i]['before'] ?? null);
+        }
+        $after = $sorted[$i]['after'] ?? null;
+        $stillCurrent = $isLast && is_array($after) && sc_price_state_same($after, $current);
+        if (!$isLast || $stillCurrent) {
+            if ($next > $windowStart && $time <= $now) {
+                $consider($after);
+            }
+            continue;
+        }
+        if ($time > $windowStart && $time <= $now) {
+            $consider($after);
+        }
+    }
+    $consider($current);
+    if ($candidates !== []) {
+        return min($candidates);
+    }
+    return sc_item_is_promo($current)
+        ? sc_plain_amount($current, 'anchor')
+        : sc_plain_amount($current, 'price');
+}
+
+function sc_format_lowest(?float $amount, string $currency): string
+{
+    if ($amount === null) {
+        return '—';
+    }
+    return sc_format_number($amount) . ($currency !== '' ? ' ' . $currency : '');
+}
+
 function sc_csv_header_key(string $value): string
 {
     $value = mb_strtolower(trim($value));
@@ -327,11 +448,15 @@ function sc_csv_header_key(string $value): string
         'code' => 'sifra',
         'sku' => 'sifra',
         'price' => 'cijena',
-        'anchor' => 'sidrena_cijena',
-        'sidrena' => 'sidrena_cijena',
-        'anchor_date' => 'sidrena_cijena_datum',
-        'datum' => 'sidrena_cijena_datum',
-        'datum_sidrene' => 'sidrena_cijena_datum',
+        'anchor' => 'bazna_cijena',
+        'sidrena' => 'bazna_cijena',
+        'sidrena_cijena' => 'bazna_cijena',
+        'bazna' => 'bazna_cijena',
+        'anchor_date' => 'bazna_cijena_datum',
+        'datum' => 'bazna_cijena_datum',
+        'datum_sidrene' => 'bazna_cijena_datum',
+        'datum_bazne' => 'bazna_cijena_datum',
+        'sidrena_cijena_datum' => 'bazna_cijena_datum',
         'category' => 'kategorija',
         'kat' => 'kategorija',
         'unit' => 'jedinica_mjere',
@@ -404,7 +529,7 @@ function sc_catalog_from_csv_rows(array $rows, array $current, string $mode): ar
     if ($hasHeader) {
         array_shift($rows);
     } else {
-        $header = ['naziv', 'cijena', 'sidrena_cijena', 'sidrena_cijena_datum', 'kategorija'];
+        $header = ['naziv', 'cijena', 'bazna_cijena', 'bazna_cijena_datum', 'kategorija'];
     }
     $grouped = [];
     $currency = (string) $current['currency'];
@@ -420,7 +545,7 @@ function sc_catalog_from_csv_rows(array $rows, array $current, string $mode): ar
         $categoryTitle = trim((string) ($assoc['kategorija'] ?? '')) ?: 'Opće';
         $categoryKey = sc_slug($categoryTitle);
         $price = (string) ($assoc['cijena'] ?? '');
-        $anchor = (string) ($assoc['sidrena_cijena'] ?? '');
+        $anchor = (string) ($assoc['bazna_cijena'] ?? '');
         $availability = mb_strtolower((string) ($assoc['dostupnost'] ?? 'dostupno'));
         if ($currency === '' || $currency === 'EUR') {
             $fromCsv = strtoupper((string) ($assoc['valuta'] ?? ''));
@@ -436,7 +561,7 @@ function sc_catalog_from_csv_rows(array $rows, array $current, string $mode): ar
             'unit' => (string) (($assoc['jedinica_mjere'] ?? '') !== '' ? $assoc['jedinica_mjere'] : 'kom'),
             'price_text' => $price,
             'anchor_text' => $anchor !== '' ? $anchor : $price,
-            'anchor_date' => (string) ($assoc['sidrena_cijena_datum'] ?? $current['anchor_date']),
+            'anchor_date' => (string) ($assoc['bazna_cijena_datum'] ?? $current['anchor_date']),
             'active' => $availability === '' || strpos($availability, 'nedostup') === false,
         ];
         if (!isset($grouped[$categoryKey])) {

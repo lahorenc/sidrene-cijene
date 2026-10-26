@@ -1,12 +1,12 @@
-# Sidrene cijene
+# Bazne cijene
 
-Samostalni PHP modul za **objavu cjenika i sidrenih cijena** (Zakon o nepoštenoj trgovačkoj praksi / transparentnost cijena). Stavke mogu biti proizvodi, usluge, materijali ili drugi sadržaj.
+Samostalni PHP modul za **objavu cjenika i baznih cijena**. Stavke mogu biti proizvodi, usluge, materijali ili drugi sadržaj. Uz važeću i baznu cijenu prikazuje se najniža neakcijska cijena u zadnjih 30 dana, izračunata iz povijesti spremanja.
 
 Moguće je **kreirati više različitih cjenika** (kataloga) i **pozivati ih po kategorijama** — svaki cjenik ima svoj slug (`?catalog=…`), a u embedu se može filtrirati jedna ili više kategorija (`&categories=…`).
 
 Ne koristi bazu podataka i **ne ovisi** o WordPressu, Joomli, ProcessWireu ili drugom CMS-u. Ugrađuje se kao mapa `/sc` u web root i radi kao zasebna aplikacija; na postojeću stranicu se ubacuje iframe embedom.
 
-**Izdavač:** [Enc IT d.o.o.](https://www.enc-it.hr/) · verzija **1.0.3**
+**Izdavač:** [Enc IT d.o.o.](https://www.enc-it.hr/) · verzija **1.1.0**
 
 > **Napomena:** ovo nije pravni savjet i ne jamči usklađenost s propisima. Trgovac u cijelosti odgovara za točnost cijena. Vidi [Odricanje od odgovornosti](#odricanje-od-odgovornosti).
 
@@ -16,7 +16,8 @@ Ne koristi bazu podataka i **ne ovisi** o WordPressu, Joomli, ProcessWireu ili d
 
 - Više različitih cjenika (kataloga) po slugovima (`?catalog=main`, `?catalog=ordinacija`…)
 - Pozivanje / filtriranje po kategorijama u embedu (`&categories=slug-1,slug-2`)
-- Kategorije i stavke s cijenom, sidrenom cijenom i datumom sidrenja
+- Kategorije i stavke s cijenom, baznom cijenom i datumom bazne
+- Najniža neakcijska cijena u 30 dana, iz povijesti spremanja (cijena ispod bazne je akcija i ne ulazi u iznos)
 - Javni prikaz + XML / CSV / JSON izvoz
 - Dnevna arhiva (XML+CSV) uz CLI ili HTTP cron
 - Admin: TinyMCE, file manager, tema/boje, vlastiti CSS
@@ -196,9 +197,9 @@ php -S 127.0.0.1:8080 -t .
 
 Ovaj plugin nije pravni savjet i ne jamči usklađenost s važećim propisima.
 
-Plugin je pomoćni tehnički alat namijenjen olakšavanju provedbe određenih obveza povezanih s prikazom i evidencijom cijena prema odlukama objavljenima u Narodnim novinama, br. 101/2026.
+Plugin je pomoćni tehnički alat za prikaz cjenika, bazne cijene i najniže neakcijske cijene u 30 dana iz vlastite povijesti spremanja.
 
-Korisnik plugina, odnosno trgovac ili pružatelj usluge, u cijelosti odgovara za točnost unesenih i prikazanih podataka, ispravnost sidrenih i drugih cijena te za usklađenost svojeg poslovanja s važećim propisima.
+Korisnik plugina, odnosno trgovac ili pružatelj usluge, u cijelosti odgovara za točnost unesenih i prikazanih podataka, ispravnost baznih cijena i prikazane najniže cijene te za usklađenost svojeg poslovanja s važećim propisima.
 
 Posebno:
 
@@ -206,7 +207,7 @@ Posebno:
 2. Ako su podaci o cijenama netočni, nepotpuni ili ne odgovaraju cijenama koje su stvarno vrijedile na relevantni datum, isti će se netočni podaci prikazivati i u cjeniku te drugim izlazima plugina.
 3. Funkcija zaključavanja ili spremanja referentnih podataka može upisivati podatke u datoteke, odnosno u bazu podataka. Prije korištenja takvih funkcija preporučuje se izrada potpune sigurnosne kopije web-stranice i podataka.
 4. Plugin uređuje isključivo tehničke funkcionalnosti unutar mrežne stranice. Ne obuhvaća obveze isticanja cijena na fizičkim prodajnim mjestima, u letcima, katalozima, plakatima, oglasima ili drugim kanalima prodaje i oglašavanja.
-5. Plugin ne zamjenjuje eventualne druge obveze vezane uz prikaz cijena, uključujući obvezu isticanja najniže cijene u prethodnom razdoblju kod posebnih oblika prodaje, kada je takva obveza primjenjiva prema Zakonu o zaštiti potrošača.
+5. Najniža cijena u 30 dana računa se iz povijesti cijena koju modul zabilježi pri spremanju. U taj iznos ulaze samo cijene koje nisu bile ispod bazne. Iznosi prije početka evidencije u modulu nisu poznati i ne izmišljaju se. Trgovac odgovara za točnost bazne cijene i za usklađenost prikaza s važećim propisima.
 6. Autor plugina nije povezan s Vladom Republike Hrvatske, Ministarstvom gospodarstva niti drugim nadležnim tijelima. Plugin nema njihovo službeno odobrenje, certifikat ili potvrdu usklađenosti.
 
 Softver se isporučuje „kakav jest“, bez izričitih ili prešutnih jamstava, u skladu s uvjetima licence pod kojom se distribuira.

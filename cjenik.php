@@ -73,6 +73,7 @@ $data = sc_catalog_load($catalog);
 if (!$archiveView) {
     $data = sc_catalog_filter_categories($data, $categorySelection);
 }
+$priceHistory = $archiveView ? [] : sc_catalog_history_by_item($catalog);
 $settings = sc_settings();
 $localServer = PHP_SAPI === 'cli-server';
 $xmlUrl = $localServer
@@ -127,7 +128,7 @@ $catalogUrl = sc_base_url('cjenik.php') . '?' . $queryBase;
     <?php if ($archiveView): ?>
         <section class="sc-archive-view">
             <p><strong><?= sc_e($settings['merchant_name']) ?></strong> · objavljeni cjenici u strojno čitljivom obliku, dostupni <?= (int) sc_config('archive_days', 30) ?> dana od objave.</p>
-            <p class="sc-archive-note">Prema Odluci o objavi cjenika proizvoda i usluga (Narodne novine 101/2026), na snazi od 1. listopada 2026. Za svaki dan objavljuje se jedan cjenik, u oba oblika.</p>
+            <p class="sc-archive-note">Za svaki dan objavljuje se jedan cjenik, u oba oblika. Bazna cijena je spremljena cijena s referentnog dana. Najniža cijena u 30 dana je najniža zabilježena cijena koja nije bila ispod bazne.</p>
             <?php $archiveDays = sc_archive_days($catalog); ?>
             <?php if ($archiveDays === []): ?>
                 <p>Arhiva još nema zapisa.</p>
@@ -182,21 +183,24 @@ $catalogUrl = sc_base_url('cjenik.php') . '?' . $queryBase;
                         <thead>
                             <tr>
                                 <th><?= sc_e($data['item_label']) ?></th>
-                                <th>Cijena</th>
-                                <th>Sidrena cijena</th>
-                                <th>Datum sidrene</th>
+                                <th>Trenutna cijena</th>
+                                <th>Bazna cijena</th>
+                                <th>Datum bazne</th>
+                                <th>Najniža cijena u 30 dana</th>
                             </tr>
                         </thead>
                         <tbody>
                             <?php foreach ($activeItems as $item): ?>
+                                <?php $lowest = sc_lowest_regular_amount($item, $priceHistory[(string) $item['id']] ?? []); ?>
                                 <tr data-sc-item data-search="<?= sc_e(mb_strtolower($item['name'] . ' ' . $item['description'])) ?>">
                                     <td data-label="<?= sc_e($data['item_label']) ?>">
                                         <strong><?= sc_e($item['name']) ?></strong>
                                         <?php if ($item['description'] !== ''): ?><small><?= sc_e($item['description']) ?></small><?php endif; ?>
                                     </td>
-                                    <td class="sc-price" data-label="Cijena"><?= sc_e(sc_format_price($item, 'price', $data['currency'])) ?></td>
-                                    <td data-label="Sidrena cijena"><?= sc_e(sc_format_price($item, 'anchor', $data['currency'])) ?></td>
-                                    <td data-label="Datum sidrene"><?= sc_e(sc_format_date($item['anchor_date'])) ?></td>
+                                    <td class="sc-price" data-label="Trenutna cijena"><?= sc_e(sc_format_price($item, 'price', $data['currency'])) ?></td>
+                                    <td data-label="Bazna cijena"><?= sc_e(sc_format_price($item, 'anchor', $data['currency'])) ?></td>
+                                    <td data-label="Datum bazne"><?= sc_e(sc_format_date($item['anchor_date'])) ?></td>
+                                    <td data-label="Najniža cijena u 30 dana"><?= sc_e(sc_format_lowest($lowest, (string) $data['currency'])) ?></td>
                                 </tr>
                             <?php endforeach; ?>
                         </tbody>
@@ -217,7 +221,7 @@ $catalogUrl = sc_base_url('cjenik.php') . '?' . $queryBase;
         <?php endif; ?>
     <?php endif; ?>
     <?php if (!empty($settings['show_credit'])): ?>
-        <p class="sc-credit">sidrene cijene by <a href="<?= sc_e((string) sc_config('vendor_url', 'https://www.enc-it.hr/')) ?>" target="_blank" rel="noopener"><?= sc_e((string) sc_config('vendor', 'Enc IT d.o.o.')) ?></a></p>
+        <p class="sc-credit">bazne cijene by <a href="<?= sc_e((string) sc_config('vendor_url', 'https://www.enc-it.hr/')) ?>" target="_blank" rel="noopener"><?= sc_e((string) sc_config('vendor', 'Enc IT d.o.o.')) ?></a></p>
     <?php endif; ?>
 </main>
 <script src="<?= sc_e(sc_asset_url('embed.js')) ?>"></script>

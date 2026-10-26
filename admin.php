@@ -145,7 +145,7 @@ function sc_admin_head(string $title): void
     <body class="sc-admin-body" data-sc-base="<?= sc_e(sc_base_url()) ?>"><?php
 }
 
-function sc_admin_item_row(int $categoryIndex, int $itemIndex, array $item): void
+function sc_admin_item_row(int $categoryIndex, int $itemIndex, array $item, ?float $lowest = null, string $currency = 'EUR'): void
 {
     ?>
     <tr data-item>
@@ -156,8 +156,9 @@ function sc_admin_item_row(int $categoryIndex, int $itemIndex, array $item): voi
         </td>
         <td><input name="categories[<?= $categoryIndex ?>][items][<?= $itemIndex ?>][code]" value="<?= sc_e($item['code'] ?? '') ?>" placeholder="Šifra"></td>
         <td><input name="categories[<?= $categoryIndex ?>][items][<?= $itemIndex ?>][price_text]" value="<?= sc_e(sc_price_text($item, 'price')) ?>" placeholder="40 / od 250 / Besplatno"></td>
-        <td><input name="categories[<?= $categoryIndex ?>][items][<?= $itemIndex ?>][anchor_text]" value="<?= sc_e(sc_price_text($item, 'anchor')) ?>" placeholder="Sidrena cijena"></td>
+        <td><input name="categories[<?= $categoryIndex ?>][items][<?= $itemIndex ?>][anchor_text]" value="<?= sc_e(sc_price_text($item, 'anchor')) ?>" placeholder="Bazna cijena"></td>
         <td><input name="categories[<?= $categoryIndex ?>][items][<?= $itemIndex ?>][anchor_date]" value="<?= sc_e(sc_format_date((string) ($item['anchor_date'] ?? date('Y-m-d')))) ?>" placeholder="dd.mm.gggg"></td>
+        <td class="sc-lowest" title="Računa se iz povijesti spremanja. Cijena ispod bazne ne ulazi u iznos."><?= sc_e(sc_format_lowest($lowest, $currency)) ?></td>
         <td>
             <label class="sc-check"><input type="checkbox" name="categories[<?= $categoryIndex ?>][items][<?= $itemIndex ?>][active]" value="1"<?= !isset($item['active']) || !empty($item['active']) ? ' checked' : '' ?>> Aktivna</label>
             <button type="button" class="sc-btn sc-btn--danger sc-btn--small" data-remove-item>Ukloni</button>
@@ -166,7 +167,7 @@ function sc_admin_item_row(int $categoryIndex, int $itemIndex, array $item): voi
     <?php
 }
 
-function sc_admin_category(int $index, array $category): void
+function sc_admin_category(int $index, array $category, array $historyByItem = [], string $currency = 'EUR'): void
 {
     $items = isset($category['items']) && is_array($category['items']) ? $category['items'] : [];
     ?>
@@ -181,10 +182,24 @@ function sc_admin_category(int $index, array $category): void
         </div>
         <div class="sc-table-scroll">
             <table class="sc-admin-table">
-                <thead><tr><th>Naziv</th><th>Šifra</th><th>Cijena</th><th>Sidrena</th><th>Datum</th><th></th></tr></thead>
+                <colgroup>
+                    <col class="sc-col-name">
+                    <col class="sc-col-code">
+                    <col class="sc-col-price">
+                    <col class="sc-col-price">
+                    <col class="sc-col-date">
+                    <col class="sc-col-low">
+                    <col class="sc-col-actions">
+                </colgroup>
+                <thead><tr><th>Naziv</th><th>Šifra</th><th>Trenutna cijena</th><th>Bazna</th><th>Datum bazne</th><th>Najniža 30 d.</th><th></th></tr></thead>
                 <tbody data-items>
                     <?php foreach ($items as $itemIndex => $item): ?>
-                        <?php sc_admin_item_row($index, (int) $itemIndex, is_array($item) ? $item : []); ?>
+                        <?php
+                        $row = is_array($item) ? $item : [];
+                        $itemId = (string) ($row['id'] ?? '');
+                        $lowest = $row === [] ? null : sc_lowest_regular_amount($row, $historyByItem[$itemId] ?? []);
+                        sc_admin_item_row($index, (int) $itemIndex, $row, $lowest, $currency);
+                        ?>
                     <?php endforeach; ?>
                 </tbody>
             </table>
@@ -237,6 +252,7 @@ if (!in_array($activeTab, sc_admin_tabs(), true)) {
     $activeTab = 'postavke';
 }
 $data = sc_catalog_load($catalogId);
+$priceHistory = sc_catalog_history_by_item($catalogId);
 $settings = sc_settings();
 $adminRecord = sc_admin_record();
 $flash = sc_flash_take();
@@ -344,7 +360,7 @@ sc_admin_head('Administracija');
                     </div>
                     <div class="sc-field"><label>Naziv prvog stupca</label><input name="item_label" value="<?= sc_e($data['item_label']) ?>" placeholder="Naziv" required></div>
                     <div class="sc-field"><label>Valuta</label><input name="currency" value="<?= sc_e($data['currency']) ?>" maxlength="3"></div>
-                    <div class="sc-field"><label>Zadani datum sidrene cijene</label><input name="anchor_date" value="<?= sc_e(sc_format_date($data['anchor_date'])) ?>"></div>
+                    <div class="sc-field"><label>Zadani datum bazne cijene</label><input name="anchor_date" value="<?= sc_e(sc_format_date($data['anchor_date'])) ?>"></div>
                 </div>
             </section>
             <section class="sc-panel">
@@ -442,16 +458,17 @@ sc_admin_head('Administracija');
                 <h3>Potpis izdavača</h3>
                 <label class="sc-check">
                     <input type="checkbox" name="show_credit" value="1"<?= !empty($settings['show_credit']) ? ' checked' : '' ?>>
-                    Prikaži u podnožju javnog cjenika: <em>sidrene cijene by Enc IT d.o.o.</em>
+                    Prikaži u podnožju javnog cjenika: <em>bazne cijene by Enc IT d.o.o.</em>
                 </label>
                 <p class="sc-hint">Ako isključite, potpis se ne prikazuje ni na javnoj stranici ni u ugradnji (iframe).</p>
             </section>
         </div>
 
         <div data-tab-panel="cjenik">
+            <p class="sc-hint">Najniža cijena u 30 dana računa se iz povijesti spremanja. Cijena ispod bazne je akcija i ne ulazi u taj iznos. Polje se ne upisuje ručno.</p>
             <div id="sc-categories">
                 <?php foreach ($data['categories'] as $index => $category): ?>
-                    <?php sc_admin_category((int) $index, $category); ?>
+                    <?php sc_admin_category((int) $index, $category, $priceHistory, (string) $data['currency']); ?>
                 <?php endforeach; ?>
             </div>
             <button type="button" class="sc-btn sc-btn--secondary" data-add-category>+ Dodaj kategoriju</button>
@@ -509,7 +526,7 @@ sc_admin_head('Administracija');
             Prvi red nije proizvod — to su imena stupaca, da program zna koji je naziv, cijena, datum i kategorija.
             Redove ispod pišete proizvode. Odjeljivač može biti točka-zarez, zarez ili tab.
         </p>
-        <pre class="sc-help-code">naziv;sifra;cijena;sidrena_cijena;sidrena_cijena_datum;kategorija
+        <pre class="sc-help-code">naziv;sifra;cijena;bazna_cijena;bazna_cijena_datum;kategorija
 USB-C kabel 1 m;kab-001;6.90;6.90;10.09.2026;Računalna oprema
 Bežični miš;mis-014;19.90;22.50;10.09.2026;Računalna oprema
 A4 papir 500 listova;pap-500;4.50;4.50;10.09.2026;Uredski materijal</pre>
@@ -521,7 +538,7 @@ A4 papir 500 listova;pap-500;4.50;4.50;10.09.2026;Uredski materijal</pre>
             <input type="hidden" name="return_tab" value="izvozi">
             <div class="sc-field">
                 <label>Zalijepite CSV</label>
-                <textarea name="csv_text" rows="10" placeholder="naziv;sifra;cijena;sidrena_cijena;sidrena_cijena_datum;kategorija"></textarea>
+                <textarea name="csv_text" rows="10" placeholder="naziv;sifra;cijena;bazna_cijena;bazna_cijena_datum;kategorija"></textarea>
             </div>
             <div class="sc-grid">
                 <div class="sc-field">
@@ -584,7 +601,7 @@ A4 papir 500 listova;pap-500;4.50;4.50;10.09.2026;Uredski materijal</pre>
             <p class="sc-help-kicker">Upute</p>
             <h2><?= sc_e((string) sc_config('name')) ?></h2>
             <p class="sc-help-lead">
-                Samostalni modul za objavu cjenika i sidrenih cijena. Radi bez baze i bez CMS-a.
+                Samostalni modul za objavu cjenika i baznih cijena. Radi bez baze i bez CMS-a.
                 Podaci se spremaju u JSON datoteke na poslužitelju.
             </p>
             <p class="sc-help-meta">
@@ -612,7 +629,7 @@ A4 papir 500 listova;pap-500;4.50;4.50;10.09.2026;Uredski materijal</pre>
                 </li>
                 <li>
                     <strong>Cjenik</strong>
-                    <span>Dodajte kategorije i stavke: naziv, cijenu, sidrenu cijenu i datum sidrene. Spremi promjene.</span>
+                    <span>Dodajte kategorije i stavke: naziv, cijenu, baznu cijenu i datum bazne. Najniža cijena u 30 dana računa se sama. Spremi promjene.</span>
                 </li>
                 <li>
                     <strong>Objava</strong>
@@ -671,7 +688,7 @@ A4 papir 500 listova;pap-500;4.50;4.50;10.09.2026;Uredski materijal</pre>
             <p>
                 Ako postoji zaglavlje, <strong>redoslijed stupaca nije bitan</strong>. Program čita imena, ne pozicije.
                 Stupce koje ne trebate možete izostaviti. Obavezan je samo <code>naziv</code>.
-                Bez zaglavlja pretpostavlja se fiksni redoslijed: naziv, cijena, sidrena cijena, datum, kategorija — taj redoslijed tada nemojte mijenjati.
+                Bez zaglavlja pretpostavlja se fiksni redoslijed: naziv, cijena, bazna cijena, datum, kategorija — taj redoslijed tada nemojte mijenjati.
             </p>
             <p>Odjeljivač može biti točka-zarez <code>;</code>, zarez ili tab. Preporuka je točka-zarez.</p>
             <dl class="sc-help-dl">
@@ -688,12 +705,12 @@ A4 papir 500 listova;pap-500;4.50;4.50;10.09.2026;Uredski materijal</pre>
                     <dd>Važeća cijena, npr. <code>19.90</code> ili <code>Besplatno</code>.</dd>
                 </div>
                 <div>
-                    <dt>sidrena_cijena</dt>
-                    <dd>Sidrena (dodatna) cijena. Ako je prazna, koristi se važeća cijena.</dd>
+                    <dt>bazna_cijena</dt>
+                    <dd>Bazna cijena. Ako je prazna, koristi se važeća cijena. Stari naziv stupca <code>sidrena_cijena</code> i dalje se prihvaća.</dd>
                 </div>
                 <div>
-                    <dt>sidrena_cijena_datum</dt>
-                    <dd>Datum sidrene, npr. <code>10.09.2026</code> ili <code>2026-09-10</code>.</dd>
+                    <dt>bazna_cijena_datum</dt>
+                    <dd>Datum bazne, npr. <code>10.09.2026</code>, <code>02.05.2025</code> ili <code>2026-09-10</code>. Stari naziv <code>sidrena_cijena_datum</code> i dalje se prihvaća.</dd>
                 </div>
                 <div>
                     <dt>kategorija</dt>
@@ -706,11 +723,11 @@ A4 papir 500 listova;pap-500;4.50;4.50;10.09.2026;Uredski materijal</pre>
                 <li><strong>Zamijeni stavke</strong> — obriše postojeće kategorije odabranog cjenika i uveze CSV.</li>
                 <li><strong>Dodaj / ažuriraj</strong> — zadrži postojeće; iste šifre ili nazivi u istoj kategoriji se ažuriraju, nove se dodaju.</li>
             </ul>
-            <pre class="sc-help-code">naziv;sifra;cijena;sidrena_cijena;sidrena_cijena_datum;kategorija
+            <pre class="sc-help-code">naziv;sifra;cijena;bazna_cijena;bazna_cijena_datum;kategorija
 USB-C kabel 1 m;kab-001;6.90;6.90;10.09.2026;Računalna oprema
 Bežični miš;mis-014;19.90;22.50;10.09.2026;Računalna oprema
 A4 papir 500 listova;pap-500;4.50;4.50;10.09.2026;Uredski materijal</pre>
-            <p class="sc-help-note">Isti podaci s drugim redoslijedom stupaca također prolaze, npr. <code>kategorija;naziv;cijena;sidrena_cijena;sidrena_cijena_datum;sifra</code>.</p>
+            <p class="sc-help-note">Isti podaci s drugim redoslijedom stupaca također prolaze, npr. <code>kategorija;naziv;cijena;bazna_cijena;bazna_cijena_datum;sifra</code>.</p>
         </article>
 
         <article class="sc-help-block">
@@ -752,17 +769,19 @@ A4 papir 500 listova;pap-500;4.50;4.50;10.09.2026;Uredski materijal</pre>
         </article>
 
         <article class="sc-help-block">
-            <h3>Sidrene cijene i propisi</h3>
+            <h3>Bazna cijena i propisi</h3>
             <p>
-                Od 1. listopada 2026. trgovci i pružatelji usluga sa web-stranicama objavljuju cjenik u strojno čitljivom XML ili CSV obliku
-                te uz važeću cijenu ističu sidrenu (dodatnu) cijenu. Ovaj program priprema javni prikaz, izvoz i arhivu.
+                Od 17. studenoga 2026. uz važeću cijenu ističe se bazna cijena. Dosadašnja sidrena cijena u ovom programu je taj isti spremljeni iznos, s novim nazivom.
+                Referentni dan upisuje trgovac: 2. 5. 2025. ili 10. 9. 2026. Program ne razvrstava robu u te skupine.
             </p>
-            <p class="sc-help-note">Ovo nije pravni savjet. Uvijek provjerite važeći tekst odluka.</p>
+            <p>
+                Najniža cijena u 30 dana je najniža brojčana cijena iz povijesti spremanja koja u tom trenutku nije bila ispod bazne.
+                Cijena ispod bazne je akcija i ne ulazi u izračun. Ako povijest ne pokriva prozor, uzima se trenutna neakcijska cijena, a kod akcije bazna.
+            </p>
+            <p class="sc-help-note">Ovo nije pravni savjet. Nacrt pravilnika može se promijeniti do 13. 11. 2026. Uvijek provjerite važeći tekst.</p>
             <ul class="sc-help-docs">
+                <li><a href="https://fiskalopedija.hr/baza-znanja/nova-odluka-sidrena-cijena" target="_blank" rel="noopener">Fiskalopedija: bazna cijena od 17. 11. 2026.</a></li>
                 <li><a href="https://narodne-novine.nn.hr/clanci/sluzbeni/2026_09_101_1213.html" target="_blank" rel="noopener">NN 101/2026 — Odluka o objavi cjenika</a></li>
-                <li><a href="https://www.zakon.hr/c/podzakonski-propis/1420946/nn-101-2026-%2811.9.2026.%29%2C-odluka-o-objavi-cjenika-proizvoda-i-usluga-kao-mjera-izravne-kontrole-cijena" target="_blank" rel="noopener">Isti tekst na Zakon.hr</a></li>
-                <li><a href="https://www.iusinfo.hr/aktualno/u-sredistu/sidrena-cijena-od-1-listopada-2026-nova-pravila-za-sve-trgovce-i-pruzatelje-usluga-70717" target="_blank" rel="noopener">IUS-INFO: sidrena cijena od 1. listopada 2026.</a></li>
-                <li><a href="https://www.rif.hr/obveza-isticanja-dodatne-sidrene-cijene-zatecene-na-dan-10-rujna-2026-te-obveza-objave-cjenika-proizvoda-i-usluga-u-trgovini-na-malo-i-pri-pruzanju-usluga/" target="_blank" rel="noopener">RIF / HZRFD: obveza sidrene cijene i objave cjenika</a></li>
                 <li><a href="https://narodne-novine.nn.hr/" target="_blank" rel="noopener">Narodne novine</a></li>
             </ul>
         </article>

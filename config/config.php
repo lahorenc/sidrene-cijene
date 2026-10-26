@@ -2,8 +2,8 @@
 declare(strict_types=1);
 
 return [
-    'name' => 'Cjenik - sidrene cijene ver.1.0.3',
-    'version' => '1.0.3',
+    'name' => 'Cjenik - bazne cijene ver.1.1.0',
+    'version' => '1.1.0',
     'vendor' => 'Enc IT d.o.o.',
     'vendor_url' => 'https://www.enc-it.hr/',
     'vendor_email' => 'info@enc-it.hr',
