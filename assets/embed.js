@@ -18,7 +18,7 @@
   function parentLayoutCss(width) {
     return (
       '.sc-cjenik-embed{display:block;width:100%;max-width:' + width + ';margin:0 auto 24px;}' +
-      '#sc-cjenik,.sc-cjenik-embed iframe{display:block;width:100%;max-width:100%;margin:0 auto;border:0;}'
+      '#sc-cjenik,.sc-cjenik-embed iframe,.cmrok-cjenik-embed__iframe{display:block;width:100%;max-width:100%;margin:0 auto;border:0;min-height:0;}'
     );
   }
 
@@ -52,21 +52,31 @@
     } catch (error) {}
   }
 
+  function contentHeight() {
+    var root = document.getElementById('sc-cjenik') || document.body;
+    var rect = root.getBoundingClientRect();
+    return Math.ceil(Math.max(root.scrollHeight || 0, root.offsetHeight || 0, rect.height || 0));
+  }
+
   function reportHeight() {
     if (window.parent === window) return;
     window.parent.postMessage({
       type: 'sc-cjenik-height',
-      height: Math.ceil(document.documentElement.scrollHeight)
+      height: Math.max(240, contentHeight())
     }, '*');
   }
 
   window.addEventListener('load', function () {
     styleParentPage();
     reportHeight();
+    setTimeout(reportHeight, 50);
+    setTimeout(reportHeight, 250);
   });
   window.addEventListener('resize', reportHeight);
   if ('ResizeObserver' in window) {
-    new ResizeObserver(reportHeight).observe(document.documentElement);
+    var root = document.getElementById('sc-cjenik') || document.documentElement;
+    new ResizeObserver(reportHeight).observe(root);
   }
   styleParentPage();
+  reportHeight();
 })();

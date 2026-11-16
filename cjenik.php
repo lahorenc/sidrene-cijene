@@ -86,6 +86,9 @@ $archiveUrl = $localServer
     ? sc_base_url('cjenik.php') . '?' . $queryBase . '&view=archive'
     : sc_base_url('arhiva-cjenika/') . '?' . $queryBase;
 $catalogUrl = sc_base_url('cjenik.php') . '?' . $queryBase;
+$exportCatalogs = sc_public_export_catalogs($localServer);
+$multiExports = count($exportCatalogs) > 1;
+$currentListType = sc_price_list_type($catalog);
 ?><!doctype html>
 <html lang="hr">
 <head>
@@ -101,10 +104,28 @@ $catalogUrl = sc_base_url('cjenik.php') . '?' . $queryBase;
 </head>
 <body class="sc-public">
 <main class="sc-wrap" id="sc-cjenik">
+    <?php
+    $currentExport = null;
+    foreach ($exportCatalogs as $export) {
+        if ($export['id'] === $catalog) {
+            $currentExport = $export;
+            break;
+        }
+    }
+    if ($currentExport === null && $exportCatalogs !== []) {
+        $currentExport = $exportCatalogs[0];
+    }
+    $archiveHeading = 'Arhiva cjenika';
+    if ($multiExports && $currentExport !== null) {
+        $archiveHeading = $currentExport['unique_type']
+            ? ('Arhiva · ' . sc_price_list_type_label($currentExport['type'], 'nominative'))
+            : ('Arhiva · ' . $currentExport['title']);
+    }
+    ?>
     <header class="sc-public-head">
         <div>
             <p class="sc-eyebrow"><?= sc_e((string) $settings['merchant_name']) ?></p>
-            <h1><?= sc_e($archiveView ? 'Arhiva cjenika' : $data['title']) ?></h1>
+            <h1><?= sc_e($archiveView ? $archiveHeading : $data['title']) ?></h1>
         </div>
         <?php if (!$archiveView): ?>
             <label class="sc-search">
@@ -113,6 +134,20 @@ $catalogUrl = sc_base_url('cjenik.php') . '?' . $queryBase;
             </label>
         <?php endif; ?>
     </header>
+
+    <?php if ($multiExports): ?>
+        <nav class="sc-catalog-tabs" aria-label="Odabir cjenika">
+            <?php foreach ($exportCatalogs as $export): ?>
+                <?php
+                $tabHref = $archiveView ? $export['archive'] : $export['html'];
+                $tabLabel = $export['unique_type']
+                    ? sc_price_list_type_label($export['type'], 'nominative')
+                    : (string) $export['title'];
+                ?>
+                <a href="<?= sc_e($tabHref) ?>" class="sc-catalog-tab<?= $export['id'] === $catalog ? ' is-active' : '' ?>"<?= $export['id'] === $catalog ? ' aria-current="page"' : '' ?>><?= sc_e($tabLabel) ?></a>
+            <?php endforeach; ?>
+        </nav>
+    <?php endif; ?>
 
     <nav class="sc-links" aria-label="Formati cjenika">
         <?php if ($archiveView): ?>
@@ -127,8 +162,12 @@ $catalogUrl = sc_base_url('cjenik.php') . '?' . $queryBase;
 
     <?php if ($archiveView): ?>
         <section class="sc-archive-view">
-            <p><strong><?= sc_e($settings['merchant_name']) ?></strong> · objavljeni cjenici u strojno čitljivom obliku, dostupni <?= (int) sc_config('archive_days', 15) ?> dana od zamjene važećim cjenikom (NN 132/2026).</p>
-            <p class="sc-archive-note">Pri izmjeni objavljuje se jedan cjenik (XML i CSV). Važeća datoteka ostaje na istoj adresi. Bazna cijena je spremljena referentna cijena; datum bazne vidi se na HTML cjeniku, ne u službenom CSV/XML-u.</p>
+            <p><strong><?= sc_e($settings['merchant_name']) ?></strong> · arhiva cjenika <?= sc_e(sc_price_list_type_label($currentListType)) ?> u strojno čitljivom obliku, dostupna <?= (int) sc_config('archive_days', 15) ?> dana od zamjene važećim cjenikom (NN 132/2026).</p>
+            <?php if ($multiExports): ?>
+                <p class="sc-archive-note">Svaki cjenik (roba / usluge) ima vlastitu arhivu i nazive datoteka (<code>ROBA</code> / <code>USLUGE</code>). Prebacite se tabom iznad.</p>
+            <?php else: ?>
+                <p class="sc-archive-note">Pri izmjeni objavljuje se jedan cjenik (XML i CSV). Važeća datoteka ostaje na istoj adresi. Bazna cijena je spremljena referentna cijena; datum bazne vidi se na HTML cjeniku, ne u službenom CSV/XML-u.</p>
+            <?php endif; ?>
             <?php $archiveDays = sc_archive_days($catalog); ?>
             <?php if ($archiveDays === []): ?>
                 <p>Arhiva još nema zapisa.</p>

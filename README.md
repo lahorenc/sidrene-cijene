@@ -6,7 +6,7 @@ Moguće je **kreirati više različitih cjenika** (kataloga) i **pozivati ih po 
 
 Ne koristi bazu podataka i **ne ovisi** o WordPressu, Joomli, ProcessWireu ili drugom CMS-u. Ugrađuje se kao mapa `/sc` u web root i radi kao zasebna aplikacija; na postojeću stranicu se ubacuje iframe embedom.
 
-**Izdavač:** [Enc IT d.o.o.](https://www.enc-it.hr/) · verzija **1.2.1**
+**Izdavač:** [Enc IT d.o.o.](https://www.enc-it.hr/) · verzija **1.2.2**
 
 > **Napomena:** ovo nije pravni savjet i ne jamči usklađenost s propisima. Trgovac u cijelosti odgovara za točnost cijena. Vidi [Odricanje od odgovornosti](#odricanje-od-odgovornosti).
 
@@ -15,6 +15,7 @@ Ne koristi bazu podataka i **ne ovisi** o WordPressu, Joomli, ProcessWireu ili d
 ## Značajke
 
 - Više različitih cjenika (kataloga) po slugovima (`?catalog=main`, `?catalog=ordinacija`…)
+- Tabovi **Usluge** / **Roba** na javnom prikazu kad postoje oba tipa; svaki s vlastitim XML/CSV/arhivom
 - Pozivanje / filtriranje po kategorijama u embedu (`&categories=slug-1,slug-2`)
 - Kategorije i stavke s cijenom, baznom cijenom i datumom bazne (datum na HTML-u)
 - Najniža neakcijska cijena u 30 dana na HTML cjeniku (nije u službenom CSV/XML)

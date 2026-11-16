@@ -349,50 +349,58 @@ sc_admin_head('Administracija');
         <div data-tab-panel="postavke">
             <section class="sc-panel">
                 <h2>Osnovne postavke</h2>
-                <div class="sc-grid">
-                    <div class="sc-field"><label>Naziv firme</label><input name="merchant_name" value="<?= sc_e($settings['merchant_name']) ?>" required></div>
-                    <div class="sc-field"><label>OIB</label><input name="oib" value="<?= sc_e($settings['oib']) ?>"></div>
-                    <div class="sc-field">
-                        <label>Adresa prodajnog objekta</label>
-                        <input name="outlet_address" value="<?= sc_e((string) $settings['outlet_address']) ?>" placeholder="npr. Ulica dr. Lavoslava Ružičke 42, Velika Gorica">
-                        <small class="sc-hint">Ulazi u naziv XML/CSV datoteke. Razmaci postaju crtice, dijakritici se skidaju.</small>
+                <div class="sc-form-stack">
+                    <div class="sc-grid sc-grid--2">
+                        <div class="sc-field"><label>Naziv firme</label><input name="merchant_name" value="<?= sc_e($settings['merchant_name']) ?>" required></div>
+                        <div class="sc-field"><label>OIB</label><input name="oib" value="<?= sc_e($settings['oib']) ?>"></div>
                     </div>
-                    <div class="sc-field">
-                        <label>Oblik prodajnog objekta</label>
-                        <input name="outlet_form" value="<?= sc_e((string) $settings['outlet_form']) ?>" placeholder="online-webshop">
+                    <div class="sc-grid">
+                        <div class="sc-field">
+                            <label>Oblik prodajnog objekta</label>
+                            <input name="outlet_form" value="<?= sc_e((string) $settings['outlet_form']) ?>" placeholder="online-webshop">
+                        </div>
+                        <div class="sc-field">
+                            <label>Oznaka objekta</label>
+                            <input name="outlet_mark" value="<?= sc_e((string) $settings['outlet_mark']) ?>" placeholder="web-1">
+                        </div>
+                        <div class="sc-field">
+                            <label>Adresa prodajnog objekta</label>
+                            <input name="outlet_address" value="<?= sc_e((string) $settings['outlet_address']) ?>" placeholder="npr. Ulica dr. Lavoslava Ružičke 42, Velika Gorica">
+                            <small class="sc-hint">Ulazi u naziv XML/CSV datoteke. Razmaci postaju crtice, dijakritici se skidaju.</small>
+                        </div>
                     </div>
-                    <div class="sc-field">
-                        <label>Oznaka objekta</label>
-                        <input name="outlet_mark" value="<?= sc_e((string) $settings['outlet_mark']) ?>" placeholder="web-1">
-                    </div>
-                    <div class="sc-field">
-                        <label>Vrsta cjenika (NN 132/2026)</label>
-                        <select name="price_list_type">
-                            <option value="usluge"<?= $settings['price_list_type'] === 'usluge' ? ' selected' : '' ?>>Usluge</option>
-                            <option value="roba"<?= $settings['price_list_type'] === 'roba' ? ' selected' : '' ?>>Roba</option>
-                        </select>
-                        <small class="sc-hint">Određuje stupce CSV/XML datoteke. Za ovaj katalog može se i posebno postaviti ispod.</small>
-                    </div>
-                    <div class="sc-field">
-                        <label>Vrsta ovog kataloga</label>
-                        <select name="list_type">
-                            <option value=""<?= ($data['list_type'] ?? '') === '' ? ' selected' : '' ?>>Ista kao u postavkama</option>
-                            <option value="usluge"<?= ($data['list_type'] ?? '') === 'usluge' ? ' selected' : '' ?>>Usluge</option>
-                            <option value="roba"<?= ($data['list_type'] ?? '') === 'roba' ? ' selected' : '' ?>>Roba</option>
-                        </select>
-                    </div>
-                    <div class="sc-field">
-                        <label><input type="checkbox" name="all_outlets" value="1"<?= !empty($settings['all_outlets']) ? ' checked' : '' ?>> Isti cjenik za sva prodajna mjesta</label>
+                    <div class="sc-field sc-field--flag">
+                        <label class="sc-check"><input type="checkbox" name="all_outlets" value="1"<?= !empty($settings['all_outlets']) ? ' checked' : '' ?>> Isti cjenik za sva prodajna mjesta</label>
                         <small class="sc-hint">U nazivu datoteke tada stoji <code>ZA_SVA_PRODAJNA_MJESTA</code> umjesto adrese i oznake.</small>
                     </div>
-                    <div class="sc-field">
-                        <label>Naziv odabranog cjenika</label>
-                        <input name="title" value="<?= sc_e($data['title']) ?>" required>
-                        <small class="sc-hint">Naziv se prikazuje u dropdownu, javnom prikazu i embedu. Slug <code><?= sc_e($catalogId) ?></code> ostaje nepromijenjen.</small>
+                    <div class="sc-grid sc-grid--2">
+                        <div class="sc-field">
+                            <label>Vrsta cjenika (NN 132/2026)</label>
+                            <select name="price_list_type">
+                                <option value="usluge"<?= $settings['price_list_type'] === 'usluge' ? ' selected' : '' ?>>Usluge</option>
+                                <option value="roba"<?= $settings['price_list_type'] === 'roba' ? ' selected' : '' ?>>Roba</option>
+                            </select>
+                            <small class="sc-hint">Određuje stupce CSV/XML datoteke. Za ovaj katalog može se i posebno postaviti desno.</small>
+                        </div>
+                        <div class="sc-field">
+                            <label>Vrsta ovog kataloga</label>
+                            <select name="list_type">
+                                <option value=""<?= ($data['list_type'] ?? '') === '' ? ' selected' : '' ?>>Ista kao u postavkama</option>
+                                <option value="usluge"<?= ($data['list_type'] ?? '') === 'usluge' ? ' selected' : '' ?>>Usluge</option>
+                                <option value="roba"<?= ($data['list_type'] ?? '') === 'roba' ? ' selected' : '' ?>>Roba</option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="sc-field"><label>Naziv prvog stupca</label><input name="item_label" value="<?= sc_e($data['item_label']) ?>" placeholder="Naziv" required></div>
-                    <div class="sc-field"><label>Valuta</label><input name="currency" value="<?= sc_e($data['currency']) ?>" maxlength="3"></div>
-                    <div class="sc-field"><label>Zadani datum bazne cijene</label><input name="anchor_date" value="<?= sc_e(sc_format_date($data['anchor_date'])) ?>"></div>
+                    <div class="sc-grid">
+                        <div class="sc-field sc-field--span-3">
+                            <label>Naziv odabranog cjenika</label>
+                            <input name="title" value="<?= sc_e($data['title']) ?>" required>
+                            <small class="sc-hint">Naziv se prikazuje u dropdownu, javnom prikazu i embedu. Slug <code><?= sc_e($catalogId) ?></code> ostaje nepromijenjen.</small>
+                        </div>
+                        <div class="sc-field"><label>Naziv prvog stupca</label><input name="item_label" value="<?= sc_e($data['item_label']) ?>" placeholder="Naziv" required></div>
+                        <div class="sc-field"><label>Valuta</label><input name="currency" value="<?= sc_e($data['currency']) ?>" maxlength="3"></div>
+                        <div class="sc-field"><label>Zadani datum bazne cijene</label><input name="anchor_date" value="<?= sc_e(sc_format_date($data['anchor_date'])) ?>"></div>
+                    </div>
                 </div>
             </section>
             <section class="sc-panel">
@@ -531,12 +539,29 @@ sc_admin_head('Administracija');
 
     <section class="sc-panel" data-tab-panel="izvozi">
         <h2>Izvozi i arhiva</h2>
-        <p>
-            <a href="<?= sc_e($xmlUrl) ?>">XML</a> ·
-            <a href="<?= sc_e($csvUrl) ?>">CSV</a> ·
-            <a href="<?= sc_e($jsonUrl) ?>">JSON</a> ·
-            <a href="<?= sc_e($archiveUrl) ?>">Arhiva</a>
-        </p>
+        <?php $adminExports = sc_public_export_catalogs($localServer); ?>
+        <?php if (count($adminExports) > 1): ?>
+            <p class="sc-hint">Kad postoji više cjenika (npr. roba i usluge), svaki ima vlastite XML/CSV linkove i arhivu. Na javnom prikazu pojavljuju se tabovi.</p>
+            <div class="sc-form-stack" style="margin-bottom:16px">
+                <?php foreach ($adminExports as $export): ?>
+                    <p>
+                        <strong><?= sc_e($export['unique_type'] ? ('Cjenik ' . sc_price_list_type_label($export['type'])) : $export['title']) ?></strong>
+                        · <a href="<?= sc_e($export['html']) ?>" target="_blank" rel="noopener">Prikaz</a>
+                        · <a href="<?= sc_e($export['xml']) ?>" target="_blank" rel="noopener">XML</a>
+                        · <a href="<?= sc_e($export['csv']) ?>" target="_blank" rel="noopener">CSV</a>
+                        · <a href="<?= sc_e($export['archive']) ?>" target="_blank" rel="noopener">Arhiva</a>
+                        <?= $export['id'] === $catalogId ? ' <span class="sc-hint">(trenutno odabrani)</span>' : '' ?>
+                    </p>
+                <?php endforeach; ?>
+            </div>
+        <?php else: ?>
+            <p>
+                <a href="<?= sc_e($xmlUrl) ?>">XML</a> ·
+                <a href="<?= sc_e($csvUrl) ?>">CSV</a> ·
+                <a href="<?= sc_e($jsonUrl) ?>">JSON</a> ·
+                <a href="<?= sc_e($archiveUrl) ?>">Arhiva</a>
+            </p>
+        <?php endif; ?>
         <div class="sc-grid">
             <div class="sc-field">
                 <label>Cron token</label>

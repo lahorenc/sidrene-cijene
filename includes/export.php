@@ -15,6 +15,96 @@ function sc_price_list_type(string $catalog = ''): string
     return in_array($fromSettings, ['roba', 'usluge'], true) ? $fromSettings : 'usluge';
 }
 
+function sc_price_list_type_label(string $type, string $case = 'genitive'): string
+{
+    $type = strtolower($type) === 'roba' ? 'roba' : 'usluge';
+    if ($case === 'nominative') {
+        return $type === 'roba' ? 'Roba' : 'Usluge';
+    }
+    return $type === 'roba' ? 'robe' : 'usluga';
+}
+
+/**
+ * Javni katalogi s URL-ovima za XML/CSV/JSON/arhivu (NN: zasebno roba i usluge).
+ *
+ * @return list<array{id:string,title:string,type:string,type_label:string,unique_type:bool,xml:string,csv:string,json:string,archive:string,html:string}>
+ */
+function sc_public_export_catalogs(bool $localServer = false): array
+{
+    $catalogs = sc_catalog_list();
+    $typeCounts = [];
+    foreach ($catalogs as $option) {
+        $type = sc_price_list_type($option['id']);
+        $typeCounts[$type] = ($typeCounts[$type] ?? 0) + 1;
+    }
+
+    $result = [];
+    foreach ($catalogs as $option) {
+        $id = (string) $option['id'];
+        $type = sc_price_list_type($id);
+        $query = 'catalog=' . rawurlencode($id);
+        $html = sc_base_url('cjenik.php') . '?' . $query;
+        if ($localServer) {
+            $xml = $html . '&format=xml';
+            $csv = $html . '&format=csv';
+            $archive = $html . '&view=archive';
+        } else {
+            $xml = sc_base_url('cjenik.xml') . '?' . $query;
+            $csv = sc_base_url('cjenik.csv') . '?' . $query;
+            $archive = sc_base_url('arhiva-cjenika/') . '?' . $query;
+        }
+        $result[] = [
+            'id' => $id,
+            'title' => (string) $option['title'],
+            'type' => $type,
+            'type_label' => sc_price_list_type_label($type, 'nominative'),
+            'unique_type' => ($typeCounts[$type] ?? 0) === 1,
+            'xml' => $xml,
+            'csv' => $csv,
+            'json' => $html . '&format=json',
+            'archive' => $archive,
+            'html' => $html,
+        ];
+    }
+    return $result;
+}
+
+function sc_public_export_link_label(array $export, string $kind): string
+{
+    $multi = !empty($export['_multi']);
+    $unique = !empty($export['unique_type']);
+    $typeWord = sc_price_list_type_label((string) ($export['type'] ?? 'usluge'));
+    $title = (string) ($export['title'] ?? 'Cjenik');
+
+    if (!$multi) {
+        return match ($kind) {
+            'xml' => 'XML',
+            'csv' => 'CSV',
+            'json' => 'JSON',
+            'archive' => 'Arhiva',
+            default => $kind,
+        };
+    }
+
+    if ($unique) {
+        return match ($kind) {
+            'xml' => 'XML ' . $typeWord,
+            'csv' => 'CSV ' . $typeWord,
+            'json' => 'JSON ' . $typeWord,
+            'archive' => 'Arhiva ' . $typeWord,
+            default => $kind . ' ' . $typeWord,
+        };
+    }
+
+    return match ($kind) {
+        'xml' => 'XML · ' . $title,
+        'csv' => 'CSV · ' . $title,
+        'json' => 'JSON · ' . $title,
+        'archive' => 'Arhiva · ' . $title,
+        default => $kind . ' · ' . $title,
+    };
+}
+
 function sc_export_columns(string $catalog = ''): array
 {
     if (sc_price_list_type($catalog) === 'roba') {
