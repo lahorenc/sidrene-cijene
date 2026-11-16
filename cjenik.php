@@ -16,9 +16,18 @@ if ($action === 'archive') {
         exit('Neispravan token.');
     }
     header('Content-Type: text/plain; charset=utf-8');
+    $force = isset($_GET['force']) && (string) $_GET['force'] !== '0' && (string) $_GET['force'] !== '';
+    $all = isset($_GET['all']) && (string) $_GET['all'] !== '0' && (string) $_GET['all'] !== '';
     try {
-        $files = sc_archive_create($catalog);
-        echo "Arhiva je izrađena: " . $files['xml'] . ', ' . $files['csv'] . "\n";
+        $results = $all ? sc_archive_sync_all($force) : [sc_archive_sync($catalog, $force)];
+        foreach ($results as $result) {
+            $id = (string) $result['catalog'];
+            if (($result['status'] ?? '') === 'created') {
+                echo "[{$id}] Arhiva izrađena: {$result['xml']}, {$result['csv']}\n";
+            } else {
+                echo "[{$id}] Bez izmjene — samo čišćenje arhive.\n";
+            }
+        }
     } catch (Throwable $e) {
         http_response_code(500);
         echo "Greška: " . $e->getMessage() . "\n";

@@ -6,7 +6,7 @@ Moguće je **kreirati više različitih cjenika** (kataloga) i **pozivati ih po 
 
 Ne koristi bazu podataka i **ne ovisi** o WordPressu, Joomli, ProcessWireu ili drugom CMS-u. Ugrađuje se kao mapa `/sc` u web root i radi kao zasebna aplikacija; na postojeću stranicu se ubacuje iframe embedom.
 
-**Izdavač:** [Enc IT d.o.o.](https://www.enc-it.hr/) · verzija **1.2.2**
+**Izdavač:** [Enc IT d.o.o.](https://www.enc-it.hr/) · verzija **1.2.3**
 
 > **Napomena:** ovo nije pravni savjet i ne jamči usklađenost s propisima. Trgovac u cijelosti odgovara za točnost cijena. Vidi [Odricanje od odgovornosti](#odricanje-od-odgovornosti).
 
@@ -110,13 +110,13 @@ OIB_OBLIK_ADRESA_OZNAKA_USLUGE_0005_20261117_1045.csv
 
 OIB (ili matični broj), oblik, adresa i oznaka unose se u Postavkama. Tip je `USLUGE` ili `ROBA`. Vrijeme: `YYYYMMDD_HHMM`. Stupci se razdvajaju točkom-zarezom (`;`), kodiranje UTF-8.
 
-Opcionalni cron:
+Opcionalni cron (preporuka **10:45**): nova arhiva **samo ako se sadržaj promijenio**; inače samo čišćenje starih snimaka. Bez argumenta / s `--all` obrađuje sve kataloge. `--force` forsira snimku.
 
 ```cron
-0 10 * * * /usr/bin/php /var/www/html/sc/cli/archive.php main >/dev/null 2>&1
+45 10 * * * /usr/bin/php /var/www/html/sc/cli/archive.php --all >/dev/null 2>&1
 ```
 
-HTTP alternativa: `/sc/cjenik.php?catalog=main&action=archive&token=...`
+HTTP alternativa: `/sc/cjenik.php?action=archive&all=1&token=...` (dodajte `&force=1` za forsiranje).
 
 ---
 

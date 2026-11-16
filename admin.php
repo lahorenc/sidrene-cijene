@@ -281,7 +281,8 @@ $jsonUrl = sc_base_url('cjenik.php') . '?' . $catalogQuery . '&format=json';
 $archiveUrl = $localServer
     ? sc_base_url('cjenik.php') . '?' . $catalogQuery . '&view=archive'
     : sc_base_url('arhiva-cjenika/') . '?' . $catalogQuery;
-$cronUrl = $xmlUrl . '&action=archive&token=' . rawurlencode((string) $settings['cron_token']);
+$cronUrl = sc_base_url('cjenik.php')
+    . '?action=archive&all=1&token=' . rawurlencode((string) $settings['cron_token']);
 $secureRequest = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
     || (string) ($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https';
 $embedUrl = ($secureRequest ? 'https' : 'http') . '://' . (string) ($_SERVER['HTTP_HOST'] ?? 'example.com')
@@ -572,10 +573,10 @@ sc_admin_head('Administracija');
         <div class="sc-field">
             <label>HTTP cron URL</label>
             <input readonly value="<?= sc_e($cronUrl) ?>" onclick="this.select()">
-            <small class="sc-hint">Koristi se samo ako hosting nema CLI cron. Token je već u ovom URL-u.</small>
+            <small class="sc-hint">HTTP cron (svi katalozi): nova arhiva samo ako se sadržaj promijenio, inače samo čišćenje. Za forsirano snimanje dodajte <code>&amp;force=1</code>.</small>
         </div>
         <p class="sc-hint">Naziv pohrane (NN 132/2026): <code><?= sc_e(sc_archive_filename_stem($catalogId, false)) ?>.xml</code> / <code>.csv</code> — OIB, objekt, tip (ROBA/USLUGE), broj pohrane, <code>YYYYMMDD_HHMM</code>.</p>
-        <p class="sc-hint">Pri izmjeni cijena snimka se objavljuje odmah (rok do 11:00 istog dana). Važeći CSV/XML ostaju na istoj URL adresi. Arhiva se čuva <?= (int) sc_config('archive_days', 15) ?> dana.</p>
+        <p class="sc-hint">Pri spremanju snimka ide odmah. Cron (npr. 10:45) je mreža: ako nema izmjene od zadnje arhive, radi samo čišćenje (<?= (int) sc_config('archive_days', 15) ?> dana). Važeći CSV/XML ostaju na istoj adresi.</p>
         <form method="post"><?= sc_csrf_field() ?><input type="hidden" name="action" value="archive"><input type="hidden" name="catalog" value="<?= sc_e($catalogId) ?>"><input type="hidden" name="return_tab" value="izvozi"><button class="sc-btn sc-btn--secondary">Izradi arhivu sada</button></form>
 
         <hr class="sc-split">
@@ -695,7 +696,7 @@ A4 papir 500 listova;pap-500;4.50;4.50;10.09.2026;Uredski materijal</pre>
                 </li>
                 <li>
                     <strong>Izvoz i arhiva</strong>
-                    <span>Preuzmite XML ili CSV te postavite dnevni cron da arhiva ostane uredna.</span>
+                    <span>Preuzmite XML ili CSV te postavite cron (npr. 10:45) za čišćenje i eventualnu snimku nakon izmjene.</span>
                 </li>
             </ol>
         </article>
@@ -820,8 +821,8 @@ A4 papir 500 listova;pap-500;4.50;4.50;10.09.2026;Uredski materijal</pre>
             <p>Pri spremanju cjenika snimka se objavljuje odmah. Rok: najkasnije do <strong>11:00</strong> na dan izmjene. Dnevna objava do 8:00 više nije obvezna.</p>
             <p>Važeći CSV/XML ostaju na istoj URL adresi. Arhivski primjerci ostaju dostupni <?= (int) sc_config('archive_days', 15) ?> dana od zamjene.</p>
             <p>Naziv datoteke: <code>OIB_oblik_adresa_oznaka_USLUGE_0001_YYYYMMDD_HHMM.csv</code> (ili <code>ROBA</code>; za sva mjesta <code>ZA_SVA_PRODAJNA_MJESTA</code>).</p>
-            <p>Opcionalni cron:</p>
-            <pre class="sc-help-code">0 10 * * * /usr/bin/php <?= sc_e(sc_cli_archive_path()) ?> <?= sc_e($catalogId) ?> >/dev/null 2>&amp;1</pre>
+            <p>Opcionalni cron (10:45): nova arhiva samo ako se sadržaj promijenio, inače samo čišćenje. Bez argumenta obrađuje sve kataloge; <code>--force</code> forsira snimku.</p>
+            <pre class="sc-help-code">45 10 * * * /usr/bin/php <?= sc_e(sc_cli_archive_path()) ?> --all >/dev/null 2>&amp;1</pre>
             <p>Ako hosting nema CLI, koristite HTTP URL i token iz kartice <strong>Izvozi i arhiva</strong>.</p>
             <p class="sc-help-note">Token: <code><?= sc_e((string) $settings['cron_token']) ?></code></p>
             <pre class="sc-help-code"><?= sc_e($cronUrl) ?></pre>

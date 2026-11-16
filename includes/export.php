@@ -361,9 +361,95 @@ function sc_archive_create(string $catalog): array
     }
     @chmod($xml, 0640);
     @chmod($csv, 0640);
+    sc_archive_write_hash($catalog, sc_archive_payload_hash($catalog));
     sc_archive_prune($catalog);
     sc_audit('archive.create', ['catalog' => $catalog, 'file' => $base]);
     return ['xml' => basename($xml), 'csv' => basename($csv)];
+}
+
+function sc_archive_payload_hash(string $catalog): string
+{
+    return hash('sha256', sc_export_csv($catalog) . "\n---\n" . sc_export_xml($catalog));
+}
+
+function sc_archive_hash_path(string $catalog): string
+{
+    return sc_data_path('archives/' . sc_slug($catalog) . '/.last-hash');
+}
+
+function sc_archive_write_hash(string $catalog, string $hash): void
+{
+    $dir = sc_data_path('archives/' . sc_slug($catalog));
+    sc_ensure_directory($dir);
+    @file_put_contents(sc_archive_hash_path($catalog), $hash . "\n", LOCK_EX);
+    @chmod(sc_archive_hash_path($catalog), 0640);
+}
+
+function sc_archive_latest_csv_path(string $catalog): ?string
+{
+    foreach (sc_archive_list($catalog) as $file) {
+        $name = (string) $file['name'];
+        if (substr($name, -4) === '.csv') {
+            $path = sc_data_path('archives/' . sc_slug($catalog) . '/' . $name);
+            return is_file($path) ? $path : null;
+        }
+    }
+    return null;
+}
+
+function sc_archive_needs_create(string $catalog): bool
+{
+    $catalog = sc_slug($catalog);
+    $current = sc_archive_payload_hash($catalog);
+    $hashPath = sc_archive_hash_path($catalog);
+    if (is_file($hashPath)) {
+        $stored = trim((string) file_get_contents($hashPath));
+        return $stored === '' || !hash_equals($stored, $current);
+    }
+    $latest = sc_archive_latest_csv_path($catalog);
+    if ($latest === null) {
+        return true;
+    }
+    return !hash_equals(
+        hash('sha256', (string) file_get_contents($latest)),
+        hash('sha256', sc_export_csv($catalog))
+    );
+}
+
+/**
+ * Cron/safety-net: archive only when content changed; always prune old files.
+ *
+ * @return array{catalog:string,status:string,xml?:string,csv?:string}
+ */
+function sc_archive_sync(string $catalog, bool $force = false): array
+{
+    $catalog = sc_slug($catalog);
+    sc_ensure_directory(sc_data_path('archives/' . $catalog));
+    if ($force || sc_archive_needs_create($catalog)) {
+        $files = sc_archive_create($catalog);
+        return [
+            'catalog' => $catalog,
+            'status' => 'created',
+            'xml' => $files['xml'],
+            'csv' => $files['csv'],
+        ];
+    }
+    sc_archive_write_hash($catalog, sc_archive_payload_hash($catalog));
+    sc_archive_prune($catalog);
+    sc_audit('archive.prune_only', ['catalog' => $catalog]);
+    return ['catalog' => $catalog, 'status' => 'pruned'];
+}
+
+/**
+ * @return list<array{catalog:string,status:string,xml?:string,csv?:string}>
+ */
+function sc_archive_sync_all(bool $force = false): array
+{
+    $results = [];
+    foreach (sc_catalog_list() as $option) {
+        $results[] = sc_archive_sync((string) $option['id'], $force);
+    }
+    return $results;
 }
 
 function sc_archive_prune(string $catalog): void
