@@ -56,6 +56,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $settings['outlet_form'] = trim((string) ($_POST['outlet_form'] ?? 'online-webshop')) ?: 'online-webshop';
             $settings['outlet_address'] = trim((string) ($_POST['outlet_address'] ?? ''));
             $settings['outlet_mark'] = trim((string) ($_POST['outlet_mark'] ?? 'web-1')) ?: 'web-1';
+            $listType = strtolower(trim((string) ($_POST['price_list_type'] ?? 'usluge')));
+            $settings['price_list_type'] = in_array($listType, ['roba', 'usluge'], true) ? $listType : 'usluge';
+            $settings['all_outlets'] = !empty($_POST['all_outlets']);
             $settings['catalog_title'] = trim((string) ($_POST['title'] ?? 'Cjenik'));
             $settings['custom_css'] = sc_clean_css((string) ($_POST['custom_css'] ?? ''));
             $settings['show_credit'] = !empty($_POST['show_credit']);
@@ -63,7 +66,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $settings['accent_color'] = (string) $settings['theme']['accent_color'];
             $ok = sc_save_settings($settings)
                 && sc_catalog_save($catalog, sc_catalog_from_post($_POST, $catalog));
-            sc_flash($ok ? 'success' : 'error', $ok ? 'Cjenik je spremljen.' : 'Spremanje nije uspjelo.');
+            if ($ok) {
+                try {
+                    sc_archive_create($catalog);
+                    sc_flash('success', 'Cjenik je spremljen i objavljen (izmjena do 11:00 istog dana).');
+                } catch (Throwable $e) {
+                    sc_flash('success', 'Cjenik je spremljen, ali arhiva nije snimljena: ' . $e->getMessage());
+                }
+            } else {
+                sc_flash('error', 'Spremanje nije uspjelo.');
+            }
         } elseif ($action === 'create_catalog') {
             $newName = trim((string) ($_POST['new_catalog'] ?? ''));
             $newId = sc_slug($newName);
@@ -354,6 +366,26 @@ sc_admin_head('Administracija');
                         <input name="outlet_mark" value="<?= sc_e((string) $settings['outlet_mark']) ?>" placeholder="web-1">
                     </div>
                     <div class="sc-field">
+                        <label>Vrsta cjenika (NN 132/2026)</label>
+                        <select name="price_list_type">
+                            <option value="usluge"<?= $settings['price_list_type'] === 'usluge' ? ' selected' : '' ?>>Usluge</option>
+                            <option value="roba"<?= $settings['price_list_type'] === 'roba' ? ' selected' : '' ?>>Roba</option>
+                        </select>
+                        <small class="sc-hint">Određuje stupce CSV/XML datoteke. Za ovaj katalog može se i posebno postaviti ispod.</small>
+                    </div>
+                    <div class="sc-field">
+                        <label>Vrsta ovog kataloga</label>
+                        <select name="list_type">
+                            <option value=""<?= ($data['list_type'] ?? '') === '' ? ' selected' : '' ?>>Ista kao u postavkama</option>
+                            <option value="usluge"<?= ($data['list_type'] ?? '') === 'usluge' ? ' selected' : '' ?>>Usluge</option>
+                            <option value="roba"<?= ($data['list_type'] ?? '') === 'roba' ? ' selected' : '' ?>>Roba</option>
+                        </select>
+                    </div>
+                    <div class="sc-field">
+                        <label><input type="checkbox" name="all_outlets" value="1"<?= !empty($settings['all_outlets']) ? ' checked' : '' ?>> Isti cjenik za sva prodajna mjesta</label>
+                        <small class="sc-hint">U nazivu datoteke tada stoji <code>ZA_SVA_PRODAJNA_MJESTA</code> umjesto adrese i oznake.</small>
+                    </div>
+                    <div class="sc-field">
                         <label>Naziv odabranog cjenika</label>
                         <input name="title" value="<?= sc_e($data['title']) ?>" required>
                         <small class="sc-hint">Naziv se prikazuje u dropdownu, javnom prikazu i embedu. Slug <code><?= sc_e($catalogId) ?></code> ostaje nepromijenjen.</small>
@@ -517,7 +549,8 @@ sc_admin_head('Administracija');
             <input readonly value="<?= sc_e($cronUrl) ?>" onclick="this.select()">
             <small class="sc-hint">Koristi se samo ako hosting nema CLI cron. Token je već u ovom URL-u.</small>
         </div>
-        <p class="sc-hint">Naziv pohrane: <code><?= sc_e(sc_archive_filename_stem(false)) ?>.xml</code> / <code>.csv</code> — isti naziv, samo ekstenzija je različita.</p>
+        <p class="sc-hint">Naziv pohrane (NN 132/2026): <code><?= sc_e(sc_archive_filename_stem($catalogId, false)) ?>.xml</code> / <code>.csv</code> — OIB, objekt, tip (ROBA/USLUGE), broj pohrane, <code>YYYYMMDD_HHMM</code>.</p>
+        <p class="sc-hint">Pri izmjeni cijena snimka se objavljuje odmah (rok do 11:00 istog dana). Važeći CSV/XML ostaju na istoj URL adresi. Arhiva se čuva <?= (int) sc_config('archive_days', 15) ?> dana.</p>
         <form method="post"><?= sc_csrf_field() ?><input type="hidden" name="action" value="archive"><input type="hidden" name="catalog" value="<?= sc_e($catalogId) ?>"><input type="hidden" name="return_tab" value="izvozi"><button class="sc-btn sc-btn--secondary">Izradi arhivu sada</button></form>
 
         <hr class="sc-split">
@@ -655,7 +688,7 @@ A4 papir 500 listova;pap-500;4.50;4.50;10.09.2026;Uredski materijal</pre>
                 </div>
                 <div>
                     <dt>Izvozi i arhiva</dt>
-                    <dd>XML, CSV, JSON, 30-dnevna arhiva, cron token te uvoz CSV-a (datoteka ili copy-paste). Svaki cjenik ima vlastitu arhivu.</dd>
+                    <dd>XML, CSV, JSON, arhiva <?= (int) sc_config('archive_days', 15) ?> dana (NN 132/2026), cron token te uvoz CSV-a. Svaki cjenik ima vlastitu arhivu.</dd>
                 </div>
                 <div>
                     <dt>Ugradnja</dt>
@@ -758,31 +791,32 @@ A4 papir 500 listova;pap-500;4.50;4.50;10.09.2026;Uredski materijal</pre>
         </article>
 
         <article class="sc-help-block">
-            <h3>Dnevna arhiva</h3>
-            <p>Najbolje je pokretati arhivu preko CLI crona, bez izlaganja tokena na webu:</p>
-            <pre class="sc-help-code">0 8 * * * /usr/bin/php <?= sc_e(sc_cli_archive_path()) ?> <?= sc_e($catalogId) ?> >/dev/null 2>&amp;1</pre>
-            <p>Naziv datoteke: <code>oblik_adresa_oznaka_0001_DD-MM-YYYYTHH-MM.xml</code>. XML i CSV iste pohrane imaju isti naziv, osim ekstenzije.</p>
+            <h3>Objava i arhiva (NN 132/2026)</h3>
+            <p>Pri spremanju cjenika snimka se objavljuje odmah. Rok: najkasnije do <strong>11:00</strong> na dan izmjene. Dnevna objava do 8:00 više nije obvezna.</p>
+            <p>Važeći CSV/XML ostaju na istoj URL adresi. Arhivski primjerci ostaju dostupni <?= (int) sc_config('archive_days', 15) ?> dana od zamjene.</p>
+            <p>Naziv datoteke: <code>OIB_oblik_adresa_oznaka_USLUGE_0001_YYYYMMDD_HHMM.csv</code> (ili <code>ROBA</code>; za sva mjesta <code>ZA_SVA_PRODAJNA_MJESTA</code>).</p>
+            <p>Opcionalni cron:</p>
+            <pre class="sc-help-code">0 10 * * * /usr/bin/php <?= sc_e(sc_cli_archive_path()) ?> <?= sc_e($catalogId) ?> >/dev/null 2>&amp;1</pre>
             <p>Ako hosting nema CLI, koristite HTTP URL i token iz kartice <strong>Izvozi i arhiva</strong>.</p>
             <p class="sc-help-note">Token: <code><?= sc_e((string) $settings['cron_token']) ?></code></p>
             <pre class="sc-help-code"><?= sc_e($cronUrl) ?></pre>
-            <p class="sc-help-note">Čuva se XML i CSV, jedan zapis po danu, <?= (int) sc_config('archive_days', 30) ?> dana.</p>
         </article>
 
         <article class="sc-help-block">
             <h3>Bazna cijena i propisi</h3>
             <p>
-                Od 17. studenoga 2026. uz važeću cijenu ističe se bazna cijena. Dosadašnja sidrena cijena u ovom programu je taj isti spremljeni iznos, s novim nazivom.
+                Od 17. studenoga 2026. uz važeću cijenu ističe se bazna cijena (Pravilnik o isticanju bazne cijene, NN 132/2026).
+                Dosadašnja sidrena cijena u ovom programu je taj isti spremljeni iznos, s novim nazivom.
                 Referentni dan upisuje trgovac: 2. 5. 2025. ili 10. 9. 2026. Program ne razvrstava robu u te skupine.
             </p>
             <p>
-                Najniža cijena u 30 dana je najniža brojčana cijena iz povijesti spremanja koja u tom trenutku nije bila ispod bazne.
-                Cijena ispod bazne je akcija i ne ulazi u izračun. Ako povijest ne pokriva prozor, uzima se trenutna neakcijska cijena, a kod akcije bazna.
+                Službeni CSV/XML (Pravilnik o načinu objave cjenika) ne sadrži datum bazne niti stupac dostupnosti.
+                Datum bazne i najniža neakcijska cijena u 30 dana ostaju na HTML cjeniku kao pomoć kupcu.
             </p>
-            <p class="sc-help-note">Ovo nije pravni savjet. Nacrt pravilnika može se promijeniti do 13. 11. 2026. Uvijek provjerite važeći tekst.</p>
+            <p class="sc-help-note">Ovo nije pravni savjet. Uvijek provjerite važeći tekst u Narodnim novinama.</p>
             <ul class="sc-help-docs">
-                <li><a href="https://fiskalopedija.hr/baza-znanja/nova-odluka-sidrena-cijena" target="_blank" rel="noopener">Fiskalopedija: bazna cijena od 17. 11. 2026.</a></li>
-                <li><a href="https://narodne-novine.nn.hr/clanci/sluzbeni/2026_09_101_1213.html" target="_blank" rel="noopener">NN 101/2026 — Odluka o objavi cjenika</a></li>
-                <li><a href="https://narodne-novine.nn.hr/" target="_blank" rel="noopener">Narodne novine</a></li>
+                <li><a href="https://narodne-novine.nn.hr/eli/sluzbeni/2026/132/pdf" target="_blank" rel="noopener">NN 132/2026 — Pravilnici o baznoj cijeni i objavi cjenika</a></li>
+                <li><a href="https://fiskalopedija.hr/baza-znanja/nova-odluka-sidrena-cijena" target="_blank" rel="noopener">Fiskalopedija: bazna cijena</a></li>
             </ul>
         </article>
 

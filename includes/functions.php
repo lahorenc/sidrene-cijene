@@ -468,6 +468,8 @@ function sc_settings(): array
         'outlet_form' => 'online-webshop',
         'outlet_address' => '',
         'outlet_mark' => 'web-1',
+        'price_list_type' => 'usluge',
+        'all_outlets' => false,
         'archive_seq' => 0,
         'catalog_title' => 'Cjenik',
         'accent_color' => '#18233d',
@@ -476,6 +478,9 @@ function sc_settings(): array
         'cron_token' => '',
         'theme' => [],
     ], $stored);
+    $settings['all_outlets'] = !empty($settings['all_outlets']);
+    $listType = strtolower(trim((string) $settings['price_list_type']));
+    $settings['price_list_type'] = in_array($listType, ['roba', 'usluge'], true) ? $listType : 'usluge';
     $hadTheme = isset($stored['theme']) && is_array($stored['theme']) && $stored['theme'] !== [];
     $theme = array_replace(sc_theme_defaults(), $hadTheme ? $stored['theme'] : []);
     if (!$hadTheme) {

@@ -159,10 +159,15 @@ function sc_catalog_normalize(array $data, string $catalog = 'main'): array
             'alt' => trim((string) ($icon['alt'] ?? '')),
         ];
     }
+    $listType = strtolower(trim((string) ($data['list_type'] ?? '')));
+    if (!in_array($listType, ['roba', 'usluge'], true)) {
+        $listType = '';
+    }
     return [
         'id' => sc_slug((string) ($data['id'] ?? $catalog)),
         'title' => trim((string) ($data['title'] ?? '')) ?: 'Cjenik',
         'item_label' => trim((string) ($data['item_label'] ?? '')) ?: 'Naziv',
+        'list_type' => $listType,
         'anchor_date' => $anchorDate,
         'currency' => trim((string) ($data['currency'] ?? 'EUR')) ?: 'EUR',
         'footer_html' => sc_clean_html((string) ($data['footer_html'] ?? '')),
@@ -189,6 +194,10 @@ function sc_catalog_normalize_item(array $item, string $fallbackDate): ?array
         'code' => trim((string) ($item['code'] ?? '')),
         'description' => trim((string) ($item['description'] ?? '')),
         'unit' => trim((string) ($item['unit'] ?? 'kom')) ?: 'kom',
+        'neto_kolicina' => trim((string) ($item['neto_kolicina'] ?? '')),
+        'marka' => trim((string) ($item['marka'] ?? '')),
+        'barkod' => trim((string) ($item['barkod'] ?? '')),
+        'ean_barkod' => trim((string) ($item['ean_barkod'] ?? '')),
         'price_amount' => $price['amount'],
         'price_from' => $price['from'],
         'price_label' => $price['label'],
@@ -203,10 +212,15 @@ function sc_catalog_normalize_item(array $item, string $fallbackDate): ?array
 
 function sc_catalog_from_post(array $post, string $catalog): array
 {
+    $listType = strtolower(trim((string) ($post['list_type'] ?? '')));
+    if (!in_array($listType, ['roba', 'usluge'], true)) {
+        $listType = '';
+    }
     $data = [
         'id' => sc_slug($catalog),
         'title' => trim((string) ($post['title'] ?? 'Cjenik')),
         'item_label' => trim((string) ($post['item_label'] ?? 'Naziv')),
+        'list_type' => $listType,
         'anchor_date' => sc_parse_date((string) ($post['anchor_date'] ?? '')),
         'currency' => strtoupper(trim((string) ($post['currency'] ?? 'EUR'))),
         'footer_html' => sc_clean_html((string) ($post['footer_html'] ?? '')),

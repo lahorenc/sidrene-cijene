@@ -1,12 +1,12 @@
 # Bazne cijene
 
-Samostalni PHP modul za **objavu cjenika i baznih cijena**. Stavke mogu biti proizvodi, usluge, materijali ili drugi sadržaj. Uz važeću i baznu cijenu prikazuje se najniža neakcijska cijena u zadnjih 30 dana, izračunata iz povijesti spremanja.
+Samostalni PHP modul za **objavu cjenika i baznih cijena** (NN 132/2026). Stavke mogu biti proizvodi ili usluge. Na HTML cjeniku uz važeću i baznu cijenu prikazuje se najniža neakcijska cijena u 30 dana iz povijesti spremanja. Službeni CSV/XML slijedi Pravilnik o načinu objave cjenika.
 
 Moguće je **kreirati više različitih cjenika** (kataloga) i **pozivati ih po kategorijama** — svaki cjenik ima svoj slug (`?catalog=…`), a u embedu se može filtrirati jedna ili više kategorija (`&categories=…`).
 
 Ne koristi bazu podataka i **ne ovisi** o WordPressu, Joomli, ProcessWireu ili drugom CMS-u. Ugrađuje se kao mapa `/sc` u web root i radi kao zasebna aplikacija; na postojeću stranicu se ubacuje iframe embedom.
 
-**Izdavač:** [Enc IT d.o.o.](https://www.enc-it.hr/) · verzija **1.1.0**
+**Izdavač:** [Enc IT d.o.o.](https://www.enc-it.hr/) · verzija **1.2.0**
 
 > **Napomena:** ovo nije pravni savjet i ne jamči usklađenost s propisima. Trgovac u cijelosti odgovara za točnost cijena. Vidi [Odricanje od odgovornosti](#odricanje-od-odgovornosti).
 
@@ -16,10 +16,11 @@ Ne koristi bazu podataka i **ne ovisi** o WordPressu, Joomli, ProcessWireu ili d
 
 - Više različitih cjenika (kataloga) po slugovima (`?catalog=main`, `?catalog=ordinacija`…)
 - Pozivanje / filtriranje po kategorijama u embedu (`&categories=slug-1,slug-2`)
-- Kategorije i stavke s cijenom, baznom cijenom i datumom bazne
-- Najniža neakcijska cijena u 30 dana, iz povijesti spremanja (cijena ispod bazne je akcija i ne ulazi u iznos)
-- Javni prikaz + XML / CSV / JSON izvoz
-- Dnevna arhiva (XML+CSV) uz CLI ili HTTP cron
+- Kategorije i stavke s cijenom, baznom cijenom i datumom bazne (datum na HTML-u)
+- Najniža neakcijska cijena u 30 dana na HTML cjeniku (nije u službenom CSV/XML)
+- XML / CSV prema NN 132/2026: zasebni stupci za robu i usluge, bez `dostupnost` i datuma bazne
+- Objava pri izmjeni (rok do 11:00 istog dana); arhiva 15 dana
+- Naziv datoteke: `OIB_oblik_adresa_oznaka_USLUGE|ROBA_SEQ_YYYYMMDD_HHMM`
 - Admin: TinyMCE, file manager, tema/boje, vlastiti CSS
 - Responsivni **iframe embed** s automatskom visinom (`postMessage`)
 - Podaci u JSON datotekama (zaključavanje + backup prije spremanja)
@@ -57,7 +58,7 @@ declare(strict_types=1);
 return [
     'base_url' => '/sc',
     'timezone' => 'Europe/Zagreb',
-    'archive_days' => 30,
+    'archive_days' => 15,
     'embed_origins' => ['https://www.domena.hr'],
 ];
 ```
@@ -95,30 +96,26 @@ Iframe šalje `postMessage` tipa `sc-cjenik-height` pa roditeljska stranica nema
 
 ---
 
-## Arhiva i cron
+## Objava i arhiva (NN 132/2026)
 
-Preporučeno (CLI, bez tokena u URL-u):
+Pri spremanju cjenika snima se XML i CSV. Važeći linkovi (`/sc/cjenik.csv`, `/sc/cjenik.xml`) ostaju na istoj adresi. Rok objave izmjene: do **11:00** istog dana. Arhiva se čuva **15** dana (`archive_days`).
 
-Naziv arhiviranih XML i CSV datoteka (ista pohrana, samo ekstenzija različita):
+Naziv datoteke:
 
 ```text
-OBLIK_ADRESA_OZNAKA_BROJPOHRANE_DATUMTVRIJEME.ext
-online-webshop_Ulica-dr-Lavoslava-Ruzicke-42-Velika-Gorica_web-1_0005_01-10-2026T08-00.xml
+OIB_OBLIK_ADRESA_OZNAKA_USLUGE_0005_20261117_1045.csv
+12345678901_ZA_SVA_PRODAJNA_MJESTA_ROBA_0005_20261117_1045.xml
 ```
 
-Adresa, oblik (`online-webshop`) i oznaka (`web-1`) unose se u Postavkama. Broj pohrane ima 4 znamenke. Datum i vrijeme su `DD-MM-YYYYTHH-MM`. Prefiks `cjenik-` i oznake poput PROIZVODI/USLUGE se ne koriste.
+OIB (ili matični broj), oblik, adresa i oznaka unose se u Postavkama. Tip je `USLUGE` ili `ROBA`. Vrijeme: `YYYYMMDD_HHMM`. Stupci se razdvajaju točkom-zarezom (`;`), kodiranje UTF-8.
+
+Opcionalni cron:
 
 ```cron
-0 8 * * * /usr/bin/php /var/www/html/sc/cli/archive.php main >/dev/null 2>&1
+0 10 * * * /usr/bin/php /var/www/html/sc/cli/archive.php main >/dev/null 2>&1
 ```
 
-Ako hosting nema CLI cron, admin prikazuje HTTP URL s tokenom:
-
-```text
-/sc/cjenik.php?catalog=main&action=archive&token=...
-```
-
-Broj dana čuvanja arhive: `archive_days` u konfiguraciji (default 30).
+HTTP alternativa: `/sc/cjenik.php?catalog=main&action=archive&token=...`
 
 ---
 

@@ -127,8 +127,8 @@ $catalogUrl = sc_base_url('cjenik.php') . '?' . $queryBase;
 
     <?php if ($archiveView): ?>
         <section class="sc-archive-view">
-            <p><strong><?= sc_e($settings['merchant_name']) ?></strong> · objavljeni cjenici u strojno čitljivom obliku, dostupni <?= (int) sc_config('archive_days', 30) ?> dana od objave.</p>
-            <p class="sc-archive-note">Za svaki dan objavljuje se jedan cjenik, u oba oblika. Bazna cijena je spremljena cijena s referentnog dana. Najniža cijena u 30 dana je najniža zabilježena cijena koja nije bila ispod bazne.</p>
+            <p><strong><?= sc_e($settings['merchant_name']) ?></strong> · objavljeni cjenici u strojno čitljivom obliku, dostupni <?= (int) sc_config('archive_days', 15) ?> dana od zamjene važećim cjenikom (NN 132/2026).</p>
+            <p class="sc-archive-note">Pri izmjeni objavljuje se jedan cjenik (XML i CSV). Važeća datoteka ostaje na istoj adresi. Bazna cijena je spremljena referentna cijena; datum bazne vidi se na HTML cjeniku, ne u službenom CSV/XML-u.</p>
             <?php $archiveDays = sc_archive_days($catalog); ?>
             <?php if ($archiveDays === []): ?>
                 <p>Arhiva još nema zapisa.</p>
