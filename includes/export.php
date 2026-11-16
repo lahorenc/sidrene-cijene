@@ -155,7 +155,7 @@ function sc_send_download_headers(string $contentType, string $filename): void
     $filename = basename($filename);
     $filename = (string) preg_replace('/[^a-zA-Z0-9._-]/', '-', $filename);
     header('Content-Type: ' . $contentType);
-    header('Content-Disposition: inline; filename="' . $filename . '"');
+    header('Content-Disposition: attachment; filename="' . $filename . '"');
     header('X-Content-Type-Options: nosniff');
     header('Cache-Control: private, no-store, max-age=0');
     header('X-Robots-Tag: noindex');
@@ -232,8 +232,8 @@ function sc_archive_filename_stem(string $catalog = '', bool $incrementSeq = tru
 function sc_archive_filename_pattern(): string
 {
     return '/^(?:'
-        . '\d{8,13}_ZA_SVA_PRODAJNA_MJESTA_(?:ROBA|USLUGE)_\d{4}_\d{8}_\d{4}'
-        . '|\d{8,13}_[A-Za-z0-9-]+_[A-Za-z0-9-]+_[A-Za-z0-9-]+_(?:ROBA|USLUGE)_\d{4}_\d{8}_\d{4}'
+        . '\d{8,13}_ZA_SVA_PRODAJNA_MJESTA_(?:ROBA|USLUGE)_\d{4,}_\d{8}_\d{4}'
+        . '|\d{8,13}_[A-Za-z0-9-]+_[A-Za-z0-9-]+_[A-Za-z0-9-]+_(?:ROBA|USLUGE)_\d{4,}_\d{8}_\d{4}'
         . '|[A-Za-z0-9-]+_[A-Za-z0-9-]+_[A-Za-z0-9-]+_\d{4}_\d{2}-\d{2}-\d{4}T\d{2}-\d{2}'
         . ')\.(xml|csv)$/';
 }
